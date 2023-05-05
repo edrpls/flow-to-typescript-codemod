@@ -36,6 +36,13 @@ export function findFlowFilesAsync(
   reporter: MigrationReporter,
   stripPathsForIgnore: boolean
 ): Promise<FlowFileList> {
+  console.log(
+    JSON.stringify(
+      { rootDirectory, ignoredDirectories, reporter, stripPathsForIgnore },
+      null,
+      2
+    ));
+    // return;
   return new Promise((_resolve, _reject) => {
     // Tracks whether or not we have rejected our promise.
     let rejected = false;

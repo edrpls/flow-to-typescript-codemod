@@ -1,26 +1,17 @@
-import * as t from "@babel/types";
-import MigrationReporter from "../../runner/migration-reporter";
-import {
-  inheritLocAndComments,
-  GlobalTypes,
-  LiteralTypes,
-  hasNullReturn,
-} from "../utils/common";
+import * as t from '@babel/types';
+import MigrationReporter from '../../runner/migration-reporter';
+import { inheritLocAndComments, GlobalTypes, LiteralTypes, hasNullReturn } from '../utils/common';
 import {
   migrateTypeParameterDeclaration,
   migrateTypeParameterInstantiation,
-} from "./type-parameter";
-import { migrateQualifiedIdentifier } from "./qualified-identifier";
-import { migrateObjectMember } from "./object-members";
-import {
-  ReactTypes,
-  SyntheticEvents,
-  MomentTypes,
-} from "../utils/type-mappings";
-import { State } from "../../runner/state";
-import { matchesFullyQualifiedName } from "../utils/matchers";
-import { migrateFunctionParameters } from "./function-parameter";
-import { MetaData } from "./metadata";
+} from './type-parameter';
+import { migrateQualifiedIdentifier } from './qualified-identifier';
+import { migrateObjectMember } from './object-members';
+import { ReactTypes, SyntheticEvents, MomentTypes } from '../utils/type-mappings';
+import { State } from '../../runner/state';
+import { matchesFullyQualifiedName } from '../utils/matchers';
+import { migrateFunctionParameters } from './function-parameter';
+import { MetaData } from './metadata';
 
 export function migrateType(
   reporter: MigrationReporter,
@@ -45,37 +36,30 @@ function actuallyMigrateType(
   metaData?: MetaData
 ): t.TSType {
   switch (flowType.type) {
-    case "AnyTypeAnnotation":
+    case 'AnyTypeAnnotation':
       return t.tsAnyKeyword();
 
-    case "ArrayTypeAnnotation":
+    case 'ArrayTypeAnnotation':
       return t.tsArrayType(migrateType(reporter, state, flowType.elementType));
 
-    case "BooleanTypeAnnotation":
+    case 'BooleanTypeAnnotation':
       return t.tsBooleanKeyword();
 
-    case "BooleanLiteralTypeAnnotation":
+    case 'BooleanLiteralTypeAnnotation':
       return t.tsLiteralType(t.booleanLiteral(flowType.value));
 
-    case "NullLiteralTypeAnnotation":
+    case 'NullLiteralTypeAnnotation':
       return t.tsNullKeyword();
 
-    case "ExistsTypeAnnotation":
+    case 'ExistsTypeAnnotation':
       // The existential type (`*`) in Flow is unsound and basically `any`. The Flow team even
       // deprecated existentials and plans to replace all usages at FB with `any`.
-      reporter.usedExistentialAny(
-        state.config.filePath,
-        flowType.loc as t.SourceLocation
-      );
+      reporter.usedExistentialAny(state.config.filePath, flowType.loc as t.SourceLocation);
       return t.tsAnyKeyword();
 
-    case "FunctionTypeAnnotation": {
+    case 'FunctionTypeAnnotation': {
       const typeParams = flowType.typeParameters
-        ? migrateTypeParameterDeclaration(
-            reporter,
-            state,
-            flowType.typeParameters
-          )
+        ? migrateTypeParameterDeclaration(reporter, state, flowType.typeParameters)
         : null;
       const params = migrateFunctionParameters(reporter, state, flowType);
       return t.tsFunctionType(
@@ -89,130 +73,101 @@ function actuallyMigrateType(
       );
     }
 
-    case "GenericTypeAnnotation": {
+    case 'GenericTypeAnnotation': {
       const id = migrateQualifiedIdentifier(flowType.id);
       const params =
         flowType.typeParameters && flowType.typeParameters.params.length > 0
-          ? migrateTypeParameterInstantiation(
-              reporter,
-              state,
-              flowType.typeParameters,
-              metaData
-            )
+          ? migrateTypeParameterInstantiation(reporter, state, flowType.typeParameters, metaData)
           : null;
 
       // `Object` → flowAnyObjectType
       // Object in Flow translates to any. The codemod is configurable to allow
       // either a loose translation to any, or a stricter semantic interpretation
-      if (id.type === "Identifier" && id.name === "Object" && !params) {
-        reporter.usedFlowAnyObject(
-          state.config.filePath,
-          id.loc as t.SourceLocation
-        );
+      if (id.type === 'Identifier' && id.name === 'Object' && !params) {
+        reporter.usedFlowAnyObject(state.config.filePath, id.loc as t.SourceLocation);
         return state.configurableTypeProvider.flowAnyObjectType;
       }
 
       // `Function` → flowAnyFunctionType
       // Function in Flow translates to any. The codemod is configurable to allow
       // either a loose translation to any, or a stricter semantic interpretation
-      if (id.type === "Identifier" && id.name === "Function" && !params) {
-        reporter.usedFlowAnyFunction(
-          state.config.filePath,
-          id.loc as t.SourceLocation
-        );
+      if (id.type === 'Identifier' && id.name === 'Function' && !params) {
+        reporter.usedFlowAnyFunction(state.config.filePath, id.loc as t.SourceLocation);
         return state.configurableTypeProvider.flowAnyFunctionType;
       }
 
       // Emit a warning if someone accidentally used String instead of string (literal type)
-      if (id.type === "Identifier" && id.name in LiteralTypes) {
-        reporter.nonLiteralFlowType(
-          state.config.filePath,
-          flowType.loc as t.SourceLocation
-        );
-        return t.tsTypeReference(
-          t.identifier(LiteralTypes[id.name as keyof typeof LiteralTypes])
-        );
+      if (id.type === 'Identifier' && id.name in LiteralTypes) {
+        reporter.nonLiteralFlowType(state.config.filePath, flowType.loc as t.SourceLocation);
+        return t.tsTypeReference(t.identifier(LiteralTypes[id.name as keyof typeof LiteralTypes]));
       }
 
       // `$ReadOnlyArray<T>` → `ReadonlyArray<T>`
       if (
-        id.type === "Identifier" &&
-        id.name === "$ReadOnlyArray" &&
+        id.type === 'Identifier' &&
+        id.name === '$ReadOnlyArray' &&
         params &&
         params.params.length === 1
       ) {
-        return t.tsTypeReference(t.identifier("ReadonlyArray"), params);
+        return t.tsTypeReference(t.identifier('ReadonlyArray'), params);
       }
 
       // `$ReadOnly<T>` → `Readonly<T>`
       if (
-        id.type === "Identifier" &&
-        id.name === "$ReadOnly" &&
+        id.type === 'Identifier' &&
+        id.name === '$ReadOnly' &&
         params &&
         params.params.length === 1
       ) {
-        return t.tsTypeReference(t.identifier("Readonly"), params);
+        return t.tsTypeReference(t.identifier('Readonly'), params);
       }
 
       // `$Keys<T>` → `keyof T`
-      if (
-        id.type === "Identifier" &&
-        id.name === "$Keys" &&
-        params &&
-        params.params.length === 1
-      ) {
+      if (id.type === 'Identifier' && id.name === '$Keys' && params && params.params.length === 1) {
         const typeOperator = t.tsTypeOperator(params.params[0]);
-        typeOperator.operator = "keyof";
+        typeOperator.operator = 'keyof';
         return typeOperator;
       }
 
       // `$Values<T>` → `T[keyof T]`
       if (
-        id.type === "Identifier" &&
-        id.name === "$Values" &&
+        id.type === 'Identifier' &&
+        id.name === '$Values' &&
         params &&
         params.params.length === 1
       ) {
         const typeOperator = t.tsTypeOperator(params.params[0]);
-        typeOperator.operator = "keyof";
+        typeOperator.operator = 'keyof';
         return t.tsIndexedAccessType(params.params[0], typeOperator);
       }
 
       // `$Shape<T>` → `Partial<T>`
       if (
-        id.type === "Identifier" &&
-        id.name === "$Shape" &&
+        id.type === 'Identifier' &&
+        id.name === '$Shape' &&
         params &&
         params.params.length === 1
       ) {
-        return t.tsTypeReference(t.identifier("Partial"), params);
+        return t.tsTypeReference(t.identifier('Partial'), params);
       }
 
       // `MapOf<T> → `Record<string, T>`
-      if (
-        id.type === "Identifier" &&
-        id.name === "MapOf" &&
-        params &&
-        params.params.length === 1
-      ) {
+      if (id.type === 'Identifier' && id.name === 'MapOf' && params && params.params.length === 1) {
         return t.tsTypeReference(
-          t.identifier("Record"),
-          t.tsTypeParameterInstantiation([
-            t.tsStringKeyword(),
-            params.params[0],
-          ])
+          t.identifier('Record'),
+          t.tsTypeParameterInstantiation([t.tsStringKeyword(), params.params[0]])
         );
       }
 
       // `MapOfWithKeyType<S, T>` → `Record<S, T>`
       if (
-        id.type === "Identifier" &&
-        id.name === "MapOfWithKeyType" &&
+        id.type === 'Identifier' &&
+        id.name === 'MapOfWithKeyType' &&
         params &&
         params.params.length === 2
       ) {
         return t.tsTypeReference(
-          t.identifier("Record"),
+          t.identifier('Record'),
           t.tsTypeParameterInstantiation([params.params[0], params.params[1]])
         );
       }
@@ -222,8 +177,8 @@ function actuallyMigrateType(
       // This is the default behavior in TypeScript
       // https://github.com/niieani/typescript-vs-flowtype/blob/master/README.md#exactpartial-object-types
       if (
-        id.type === "Identifier" &&
-        id.name === "$Exact" &&
+        id.type === 'Identifier' &&
+        id.name === '$Exact' &&
         params &&
         params.params.length === 1
       ) {
@@ -232,18 +187,15 @@ function actuallyMigrateType(
 
       // `$ObjMap<O, F>` → `Flow.ObjMap<F>`
       if (
-        id.type === "Identifier" &&
-        id.name === "$ObjMap" &&
+        id.type === 'Identifier' &&
+        id.name === '$ObjMap' &&
         params &&
         params.params.length === 2
       ) {
-        reporter.usedObjMap(
-          state.config.filePath,
-          flowType.loc as t.SourceLocation
-        );
+        reporter.usedObjMap(state.config.filePath, flowType.loc as t.SourceLocation);
         state.usedUtils = true;
         return t.tsTypeReference(
-          t.tsQualifiedName(t.identifier("Flow"), t.identifier("ObjMap")),
+          t.tsQualifiedName(t.identifier('Flow'), t.identifier('ObjMap')),
           params
         );
       }
@@ -257,22 +209,19 @@ function actuallyMigrateType(
       //
       // So basically these types are `any` and we will treat them as such in the migration.
       if (
-        id.type === "Identifier" &&
-        id.name === "$Subtype" &&
+        id.type === 'Identifier' &&
+        id.name === '$Subtype' &&
         params &&
         params.params.length === 1
       ) {
-        reporter.usedFlowSubtype(
-          state.config.filePath,
-          id.loc as t.SourceLocation
-        );
+        reporter.usedFlowSubtype(state.config.filePath, id.loc as t.SourceLocation);
         return t.tsAnyKeyword();
       }
 
       // `$PropertyType<T, K>` → `T[K]`
       if (
-        id.type === "Identifier" &&
-        id.name === "$PropertyType" &&
+        id.type === 'Identifier' &&
+        id.name === '$PropertyType' &&
         params &&
         params.params.length === 2
       ) {
@@ -281,8 +230,8 @@ function actuallyMigrateType(
 
       // `$ElementType<T, K>` → `T[K]`
       if (
-        id.type === "Identifier" &&
-        id.name === "$ElementType" &&
+        id.type === 'Identifier' &&
+        id.name === '$ElementType' &&
         params &&
         params.params.length === 2
       ) {
@@ -290,46 +239,31 @@ function actuallyMigrateType(
       }
 
       // `Class<Shape>` → `Flow.Class<Shape>`
-      if (
-        id.type === "Identifier" &&
-        id.name === "Class" &&
-        params &&
-        params.params.length === 1
-      ) {
+      if (id.type === 'Identifier' && id.name === 'Class' && params && params.params.length === 1) {
         state.usedUtils = true;
         return t.tsTypeReference(
-          t.tsQualifiedName(t.identifier("Flow"), t.identifier("Class")),
+          t.tsQualifiedName(t.identifier('Flow'), t.identifier('Class')),
           params
         );
       }
 
       // `$Diff<A, B>` → `Flow.Diff<A, B>`
-      if (
-        id.type === "Identifier" &&
-        id.name === "$Diff" &&
-        params &&
-        params.params.length === 2
-      ) {
+      if (id.type === 'Identifier' && id.name === '$Diff' && params && params.params.length === 2) {
         state.usedUtils = true;
         return t.tsTypeReference(
-          t.tsQualifiedName(t.identifier("Flow"), t.identifier("Diff")),
+          t.tsQualifiedName(t.identifier('Flow'), t.identifier('Diff')),
           params
         );
       }
       // `$Rest<A, B>` → `Flow.Diff<A, B>`
       // Rest is the same as diff, but properties may not be defined so we wrap it in partial
-      if (
-        id.type === "Identifier" &&
-        id.name === "$Rest" &&
-        params &&
-        params.params.length === 2
-      ) {
+      if (id.type === 'Identifier' && id.name === '$Rest' && params && params.params.length === 2) {
         state.usedUtils = true;
         return t.tsTypeReference(
-          t.identifier("Partial"),
+          t.identifier('Partial'),
           t.tsTypeParameterInstantiation([
             t.tsTypeReference(
-              t.tsQualifiedName(t.identifier("Flow"), t.identifier("Diff")),
+              t.tsQualifiedName(t.identifier('Flow'), t.identifier('Diff')),
               params
             ),
           ])
@@ -337,30 +271,25 @@ function actuallyMigrateType(
       }
 
       // `$Call<A, B>` → `ReturnType<A>`
-      if (
-        id.type === "Identifier" &&
-        id.name === "$Call" &&
-        params &&
-        params.params.length >= 1
-      ) {
+      if (id.type === 'Identifier' && id.name === '$Call' && params && params.params.length >= 1) {
         // Remove extra type parameters
         params.params = params.params.slice(0, 1);
-        return t.tsTypeReference(t.identifier("ReturnType"), params);
+        return t.tsTypeReference(t.identifier('ReturnType'), params);
       }
 
       // `$NonMaybeType<A>` → `NonNullable<A>`
       if (
-        id.type === "Identifier" &&
-        id.name === "$NonMaybeType" &&
+        id.type === 'Identifier' &&
+        id.name === '$NonMaybeType' &&
         params &&
         params.params.length === 1
       ) {
-        return t.tsTypeReference(t.identifier("NonNullable"), params);
+        return t.tsTypeReference(t.identifier('NonNullable'), params);
       }
 
       // Global Type Conversions
       // `TimeoutID` → `number` etc
-      if (id.type === "Identifier" && id.name in GlobalTypes) {
+      if (id.type === 'Identifier' && id.name in GlobalTypes) {
         return t.tsTypeReference(
           t.identifier(GlobalTypes[id.name as keyof typeof GlobalTypes]),
           params
@@ -375,36 +304,26 @@ function actuallyMigrateType(
       // In practice, we found this makes a lot of type errors, since lots of people use this type for onChange or checking `input.checked`.
       // Since there's no perfect solution, we change it to a change event to cause the least amount of errors.
       // If the event already has an element specified we keep it, otherwise we add input element as the default.
-      if (id.type === "Identifier" && id.name === "SyntheticInputEvent") {
+      if (id.type === 'Identifier' && id.name === 'SyntheticInputEvent') {
         const name = params
-          ? t.tsQualifiedName(
-              t.identifier("React"),
-              t.identifier("ChangeEvent")
-            )
-          : t.tsQualifiedName(
-              t.identifier("React"),
-              t.identifier("ChangeEvent<HTMLInputElement>")
-            );
+          ? t.tsQualifiedName(t.identifier('React'), t.identifier('ChangeEvent'))
+          : t.tsQualifiedName(t.identifier('React'), t.identifier('ChangeEvent<HTMLInputElement>'));
         return t.tsTypeReference(name, params);
       }
 
       // `SyntheticMouseEvent` → `React.MouseEvent`
-      if (id.type === "Identifier" && id.name in SyntheticEvents) {
+      if (id.type === 'Identifier' && id.name in SyntheticEvents) {
         return t.tsTypeReference(
-          t.identifier(
-            SyntheticEvents[id.name as keyof typeof SyntheticEvents]
-          ),
+          t.identifier(SyntheticEvents[id.name as keyof typeof SyntheticEvents]),
           params
         );
       }
 
       // `JestMockFn` → `jest.mockedFunction`
-      if (id.type === "Identifier" && id.name === "JestMockFn") {
+      if (id.type === 'Identifier' && id.name === 'JestMockFn') {
         const parent = metaData?.path?.parentPath;
 
-        function getFqnForMemberExpression(
-          expression: t.MemberExpression
-        ): string {
+        function getFqnForMemberExpression(expression: t.MemberExpression): string {
           const fqn: Array<string> = [];
           let currentExpression = expression;
 
@@ -415,51 +334,47 @@ function actuallyMigrateType(
           fqn.push((currentExpression as unknown as t.Identifier).name);
 
           return fqn.reverse().reduce((prev, curr, i) => {
-            return `${prev}${i > 0 ? "." : ""}${curr}`;
-          }, "");
+            return `${prev}${i > 0 ? '.' : ''}${curr}`;
+          }, '');
         }
 
         // `(test: JestMockFn<any,any>)` → (test as JestMockFn<typeof test>)
         if (
           parent &&
-          parent.node.type === "ExpressionStatement" &&
+          parent.node.type === 'ExpressionStatement' &&
           parent.node.expression &&
-          parent.node.expression.type === "TypeCastExpression" &&
+          parent.node.expression.type === 'TypeCastExpression' &&
           parent.node.expression.expression &&
-          parent.node.expression.expression.type === "Identifier"
+          parent.node.expression.expression.type === 'Identifier'
         ) {
           return t.tsTypeReference(
-            t.identifier("jest.MockedFunction"),
+            t.identifier('jest.MockedFunction'),
             t.tsTypeParameterInstantiation([
-              t.tsTypeQuery(
-                t.identifier(parent.node.expression.expression.name)
-              ),
+              t.tsTypeQuery(t.identifier(parent.node.expression.expression.name)),
             ])
           );
           // `(test.a: JestMockFn<any,any>)` → `(test.a as JestMockFn<typeof test.a>)`
         } else if (
           parent &&
-          parent.node.type === "ExpressionStatement" &&
+          parent.node.type === 'ExpressionStatement' &&
           parent.node.expression &&
-          parent.node.expression.type === "TypeCastExpression" &&
+          parent.node.expression.type === 'TypeCastExpression' &&
           parent.node.expression.expression &&
-          parent.node.expression.expression.type === "MemberExpression"
+          parent.node.expression.expression.type === 'MemberExpression'
         ) {
           try {
             return t.tsTypeReference(
-              t.identifier("jest.MockedFunction"),
+              t.identifier('jest.MockedFunction'),
               t.tsTypeParameterInstantiation([
                 t.tsTypeQuery(
-                  t.identifier(
-                    getFqnForMemberExpression(parent.node.expression.expression)
-                  )
+                  t.identifier(getFqnForMemberExpression(parent.node.expression.expression))
                 ),
               ])
             );
           } catch (_e) {
             // These are just test functions so return the default if fetching the member expression fails for whatever reason
             return t.tsTypeReference(
-              t.identifier("jest.MockedFunction"),
+              t.identifier('jest.MockedFunction'),
               t.tsTypeParameterInstantiation([t.tsAnyKeyword()])
             );
           }
@@ -467,18 +382,16 @@ function actuallyMigrateType(
           // Handle function calls following the cast `(test.a: JestMockFn<any,any>).fnCall()` → `(test.a as JestMockFn<typeof test.a>).fnCall()`
         } else if (
           parent &&
-          parent.node.type === "MemberExpression" &&
-          parent.node.object.type === "TypeCastExpression"
+          parent.node.type === 'MemberExpression' &&
+          parent.node.object.type === 'TypeCastExpression'
         ) {
           try {
             return t.tsTypeReference(
-              t.identifier("jest.MockedFunction"),
+              t.identifier('jest.MockedFunction'),
               t.tsTypeParameterInstantiation([
                 t.tsTypeQuery(
                   t.identifier(
-                    getFqnForMemberExpression(
-                      parent.node.object.expression as t.MemberExpression
-                    )
+                    getFqnForMemberExpression(parent.node.object.expression as t.MemberExpression)
                   )
                 ),
               ])
@@ -486,13 +399,13 @@ function actuallyMigrateType(
           } catch (e) {
             // These are just test functions so return the default if fetching the member expression fails for whatever reason
             return t.tsTypeReference(
-              t.identifier("jest.MockedFunction"),
+              t.identifier('jest.MockedFunction'),
               t.tsTypeParameterInstantiation([t.tsAnyKeyword()])
             );
           }
         } else {
           return t.tsTypeReference(
-            t.identifier("jest.MockedFunction"),
+            t.identifier('jest.MockedFunction'),
             t.tsTypeParameterInstantiation([t.tsAnyKeyword()])
           );
         }
@@ -500,15 +413,12 @@ function actuallyMigrateType(
 
       // `window.SyntheticMouseEvent` → `SyntheticMouseEvent`
       if (
-        id.type === "TSQualifiedName" &&
-        id.left.type === "Identifier" &&
-        id.left.name === "window"
+        id.type === 'TSQualifiedName' &&
+        id.left.type === 'Identifier' &&
+        id.left.name === 'window'
       ) {
-        reporter.usedWindowAsAnyType(
-          state.config.filePath,
-          id.loc as t.SourceLocation
-        );
-        return id.right.name.startsWith("HTML")
+        reporter.usedWindowAsAnyType(state.config.filePath, id.loc as t.SourceLocation);
+        return id.right.name.startsWith('HTML')
           ? t.tsTypeReference(t.identifier(id.right.name))
           : t.tsAnyKeyword();
       }
@@ -521,39 +431,34 @@ function actuallyMigrateType(
       // In TS, if you say a function returns React.ReactNode, it cannot be used as a <JSXElement /> due to conflicts with the JSX types.
       // The best return type appears to be React.ReactElement, and you have to declare null if it also returns null
       // So we check if we're in a function / render function return, and check for a null return in the function, before annotating.
-      let isRenderMethodOrNonClassMethodReturnType =
-        metaData?.returnType ?? false;
+      let isRenderMethodOrNonClassMethodReturnType = metaData?.returnType ?? false;
 
       if (metaData?.path && metaData.path.parentPath) {
         const parent = metaData.path.parentPath;
         if (
-          parent.node.type === "ClassMethod" &&
-          parent.node.key.type === "Identifier" &&
-          parent.node.key.name !== "render" &&
+          parent.node.type === 'ClassMethod' &&
+          parent.node.key.type === 'Identifier' &&
+          parent.node.key.name !== 'render' &&
           state.hasJsx
         ) {
           isRenderMethodOrNonClassMethodReturnType = false;
         }
       }
       if (
-        ((matchesFullyQualifiedName("React", "Node")(id) &&
+        ((matchesFullyQualifiedName('React', 'Node')(id) &&
           isRenderMethodOrNonClassMethodReturnType) ||
-          matchesFullyQualifiedName("React", "MixedElement")(id)) &&
+          matchesFullyQualifiedName('React', 'MixedElement')(id)) &&
         !params
       ) {
         const parentNode = metaData?.path?.parentPath?.node;
         let hasNull = false;
-        if (parentNode && "body" in parentNode) {
+        if (parentNode && 'body' in parentNode) {
           const parentPath = metaData?.path?.parentPath;
           const scope = metaData?.path?.scope;
-          hasNull = hasNullReturn(
-            parentNode.body as t.BlockStatement,
-            scope,
-            parentPath
-          );
+          hasNull = hasNullReturn(parentNode.body as t.BlockStatement, scope, parentPath);
         }
         const reactElement = t.tsTypeReference(
-          t.tsQualifiedName(t.identifier("React"), t.identifier("ReactElement"))
+          t.tsQualifiedName(t.identifier('React'), t.identifier('ReactElement'))
         );
         if (hasNull) {
           return t.tsUnionType([reactElement, t.tsNullKeyword()]);
@@ -567,60 +472,48 @@ function actuallyMigrateType(
       // convert this flow type to something that TypeScript understands so we can get the less strict children
       // prop checking.
       if (
-        matchesFullyQualifiedName("React", "ChildrenArray")(id) &&
+        matchesFullyQualifiedName('React', 'ChildrenArray')(id) &&
         params &&
         params.params.length === 1
       ) {
-        return t.tsUnionType([
-          t.tsTypeReference(t.identifier("Array"), params),
-          params.params[0],
-        ]);
+        return t.tsUnionType([t.tsTypeReference(t.identifier('Array'), params), params.params[0]]);
       }
 
       // `React.AbstractComponent` → `Flow.AbstractComponent`
       // There is no equivalent of React.AbstractComponent in TypeScript
       // and the type is fairly verbose so we need a utility type for it.
       if (
-        id.type === "TSQualifiedName" &&
-        id.left.type === "Identifier" &&
-        id.left.name === "React" &&
-        id.right.type === "Identifier" &&
-        id.right.name === "AbstractComponent"
+        id.type === 'TSQualifiedName' &&
+        id.left.type === 'Identifier' &&
+        id.left.name === 'React' &&
+        id.right.type === 'Identifier' &&
+        id.right.name === 'AbstractComponent'
       ) {
         state.usedUtils = true;
         return t.tsTypeReference(
-          t.tsQualifiedName(
-            t.identifier("Flow"),
-            t.identifier("AbstractComponent")
-          ),
+          t.tsQualifiedName(t.identifier('Flow'), t.identifier('AbstractComponent')),
           params
         );
       }
 
       // React.ElementConfig<T> -> JSX.LibraryManagedAttributes<T, React.ComponentProps<T>>
       if (
-        id.type === "TSQualifiedName" &&
-        id.left.type === "Identifier" &&
-        id.left.name === "React" &&
-        id.right.type === "Identifier" &&
-        id.right.name === "ElementConfig" &&
+        id.type === 'TSQualifiedName' &&
+        id.left.type === 'Identifier' &&
+        id.left.name === 'React' &&
+        id.right.type === 'Identifier' &&
+        id.right.name === 'ElementConfig' &&
         params &&
         params.params.length === 1
       ) {
         const parameter = params.params[0];
 
         return t.tsTypeReference(
-          t.tsQualifiedName(
-            t.identifier("JSX"),
-            t.identifier("LibraryManagedAttributes")
-          ),
+          t.tsQualifiedName(t.identifier('JSX'), t.identifier('LibraryManagedAttributes')),
           t.tsTypeParameterInstantiation([
             parameter,
             t.tsTypeReference(
-              t.tsQualifiedName(
-                t.identifier("React"),
-                t.identifier("ComponentProps")
-              ),
+              t.tsQualifiedName(t.identifier('React'), t.identifier('ComponentProps')),
               t.tsTypeParameterInstantiation([parameter])
             ),
           ])
@@ -629,11 +522,11 @@ function actuallyMigrateType(
 
       // React.Config<Props, DefaultProps> -> Props & DefaultProps
       if (
-        id.type === "TSQualifiedName" &&
-        id.left.type === "Identifier" &&
-        id.left.name === "React" &&
-        id.right.type === "Identifier" &&
-        id.right.name === "Config" &&
+        id.type === 'TSQualifiedName' &&
+        id.left.type === 'Identifier' &&
+        id.left.name === 'React' &&
+        id.right.type === 'Identifier' &&
+        id.right.name === 'Config' &&
         params &&
         params.params.length === 2
       ) {
@@ -645,12 +538,12 @@ function actuallyMigrateType(
 
       function isFlowReactElement(id: t.Identifier | t.TSQualifiedName) {
         return (
-          (id.type === "TSQualifiedName" &&
-            id.left.type === "Identifier" &&
-            id.left.name === "React" &&
-            id.right.type === "Identifier" &&
-            id.right.name === "Element") ||
-          (id.type === "Identifier" && id.name === "React$Element")
+          (id.type === 'TSQualifiedName' &&
+            id.left.type === 'Identifier' &&
+            id.left.name === 'React' &&
+            id.right.type === 'Identifier' &&
+            id.right.name === 'Element') ||
+          (id.type === 'Identifier' && id.name === 'React$Element')
         );
       }
 
@@ -660,33 +553,24 @@ function actuallyMigrateType(
         // @ts-expect-error typeName only from recast
         const { typeName } = firstParam;
         if (
-          firstParam.type === "TSAnyKeyword" ||
-          (firstParam.type === "TSTypeReference" &&
-            typeName.type === "TSQualifiedName" &&
-            typeName.left.type === "Identifier" &&
-            typeName.left.name === "Flow" &&
-            typeName.right.type === "Identifier" &&
-            typeName.right.name === "TSAnyKeyword")
+          firstParam.type === 'TSAnyKeyword' ||
+          (firstParam.type === 'TSTypeReference' &&
+            typeName.type === 'TSQualifiedName' &&
+            typeName.left.type === 'Identifier' &&
+            typeName.left.name === 'Flow' &&
+            typeName.right.type === 'Identifier' &&
+            typeName.right.name === 'TSAnyKeyword')
         ) {
           return t.tsTypeReference(
-            t.tsQualifiedName(
-              t.identifier("React"),
-              t.identifier("ReactElement")
-            ),
+            t.tsQualifiedName(t.identifier('React'), t.identifier('ReactElement')),
             params
           );
         } else {
           return t.tsTypeReference(
-            t.tsQualifiedName(
-              t.identifier("React"),
-              t.identifier("ReactElement")
-            ),
+            t.tsQualifiedName(t.identifier('React'), t.identifier('ReactElement')),
             t.tsTypeParameterInstantiation([
               t.tsTypeReference(
-                t.tsQualifiedName(
-                  t.identifier("React"),
-                  t.identifier("ComponentProps")
-                ),
+                t.tsQualifiedName(t.identifier('React'), t.identifier('ComponentProps')),
                 params
               ),
             ])
@@ -696,15 +580,15 @@ function actuallyMigrateType(
 
       // `React.Portal/Children/Etc<T>` → `React.ReactPortal/ReactChildren/Etc`
       if (
-        id.type === "TSQualifiedName" &&
-        id.left.type === "Identifier" &&
-        id.left.name === "React" &&
-        id.right.type === "Identifier" &&
+        id.type === 'TSQualifiedName' &&
+        id.left.type === 'Identifier' &&
+        id.left.name === 'React' &&
+        id.right.type === 'Identifier' &&
         id.right.name in ReactTypes
       ) {
         return t.tsTypeReference(
           t.tsQualifiedName(
-            t.identifier("React"),
+            t.identifier('React'),
             t.identifier(ReactTypes[id.right.name as keyof typeof ReactTypes])
           ),
           params
@@ -712,24 +596,24 @@ function actuallyMigrateType(
       }
 
       // `moment` → `moment.Moment`
-      if (id.type === "Identifier" && id.name === "moment") {
+      if (id.type === 'Identifier' && id.name === 'moment') {
         return t.tsTypeReference(
-          t.tsQualifiedName(t.identifier("moment"), t.identifier("Moment")),
+          t.tsQualifiedName(t.identifier('moment'), t.identifier('Moment')),
           params
         );
       }
 
       // `moment.MomentDuration` → `moment.Duration`
       if (
-        id.type === "TSQualifiedName" &&
-        id.left.type === "Identifier" &&
-        id.left.name === "moment" &&
-        id.right.type === "Identifier" &&
+        id.type === 'TSQualifiedName' &&
+        id.left.type === 'Identifier' &&
+        id.left.name === 'moment' &&
+        id.right.type === 'Identifier' &&
         id.right.name in MomentTypes
       ) {
         return t.tsTypeReference(
           t.tsQualifiedName(
-            t.identifier("moment"),
+            t.identifier('moment'),
             t.identifier(MomentTypes[id.right.name as keyof typeof MomentTypes])
           ),
           params
@@ -739,29 +623,29 @@ function actuallyMigrateType(
       return t.tsTypeReference(id, params);
     }
 
-    case "InterfaceTypeAnnotation":
+    case 'InterfaceTypeAnnotation':
       throw new Error(`Unsupported AST node: ${JSON.stringify(flowType.type)}`);
 
-    case "IntersectionTypeAnnotation":
+    case 'IntersectionTypeAnnotation':
       return t.tsIntersectionType(
         flowType.types.map((flowMemberType) => {
           const tsMemberType = migrateType(reporter, state, flowMemberType);
 
           // Function types have weird specificities in intersections/unions. Wrap them in
           // parentheses to preserve the AST specificity.
-          return tsMemberType.type === "TSFunctionType"
+          return tsMemberType.type === 'TSFunctionType'
             ? t.tsParenthesizedType(tsMemberType)
             : tsMemberType;
         })
       );
 
-    case "MixedTypeAnnotation":
+    case 'MixedTypeAnnotation':
       return t.tsUnknownKeyword();
 
-    case "EmptyTypeAnnotation":
+    case 'EmptyTypeAnnotation':
       return t.tsNeverKeyword();
 
-    case "NullableTypeAnnotation": {
+    case 'NullableTypeAnnotation': {
       return t.tsUnionType([
         migrateType(reporter, state, flowType.typeAnnotation),
         t.tsNullKeyword(),
@@ -769,13 +653,13 @@ function actuallyMigrateType(
       ]);
     }
 
-    case "NumberLiteralTypeAnnotation":
+    case 'NumberLiteralTypeAnnotation':
       return t.tsLiteralType(t.numericLiteral(flowType.value));
 
-    case "NumberTypeAnnotation":
+    case 'NumberTypeAnnotation':
       return t.tsNumberKeyword();
 
-    case "ObjectTypeAnnotation": {
+    case 'ObjectTypeAnnotation': {
       // We ignore `exact`/`inexact` for Flow object types since that just straight up doesn’t
       // matter in TypeScript.
 
@@ -795,7 +679,7 @@ function actuallyMigrateType(
       // function f(): {} {} -> function f(): Record<string, any> {}
       if (flowMembers.length === 0 && !metaData?.isInterfaceBody) {
         return t.tsTypeReference(
-          t.identifier("Record"),
+          t.identifier('Record'),
           t.tsTypeParameterInstantiation([t.tsAnyKeyword(), t.tsAnyKeyword()])
         );
       }
@@ -805,12 +689,11 @@ function actuallyMigrateType(
 
       // We need to split Flow object type spreads into intersection objects.
       const intersectionTypes: Array<
-        | { kind: "literal"; members: Array<t.TSTypeElement> }
-        | { kind: "reference"; type: t.TSType }
+        { kind: 'literal'; members: Array<t.TSTypeElement> } | { kind: 'reference'; type: t.TSType }
       > = [];
 
       for (const flowMember of flowMembers) {
-        if (flowMember.type === "ObjectTypeSpreadProperty") {
+        if (flowMember.type === 'ObjectTypeSpreadProperty') {
           // Recast attaches comments to the `loc`. We don’t want to miss comments
           // attached to a spread so wrap with a parenthesized type and attach the spread
           // loc. Prettier should remove unnesecary parentheses.
@@ -818,18 +701,17 @@ function actuallyMigrateType(
             migrateType(reporter, state, flowMember.argument)
           );
           inheritLocAndComments(flowMember, tsArgument);
-          intersectionTypes.push({ kind: "reference", type: tsArgument });
+          intersectionTypes.push({ kind: 'reference', type: tsArgument });
         } else {
           // Push a migrated member into the last literal object in our intersection types
           // array. If the last type is not an intersection, then add one.
           let members: Array<t.TSTypeElement>;
-          const lastIntersectionType =
-            intersectionTypes[intersectionTypes.length - 1];
-          if (lastIntersectionType && lastIntersectionType.kind === "literal") {
+          const lastIntersectionType = intersectionTypes[intersectionTypes.length - 1];
+          if (lastIntersectionType && lastIntersectionType.kind === 'literal') {
             ({ members } = lastIntersectionType);
           } else {
             members = [];
-            const nextIntersectionType = { kind: "literal" as const, members };
+            const nextIntersectionType = { kind: 'literal' as const, members };
             intersectionTypes.push(nextIntersectionType);
           }
           members.push(migrateObjectMember(reporter, state, flowMember));
@@ -841,22 +723,21 @@ function actuallyMigrateType(
       }
 
       const types = intersectionTypes.map((intersectionType) => {
-        if (intersectionType.kind === "literal") {
+        if (intersectionType.kind === 'literal') {
           // TypeScript only supports `string` or `number` for `T` in `{[x: T]: U}`.
           // TypeScript also provides `Record<K, V>` as a utility type for arbitrary key
           // types. Convert all objects of that form to `Record`.
           if (intersectionType.members.length === 1) {
             const onlyMember = intersectionType.members[0];
-            if (onlyMember.type === "TSIndexSignature") {
-              const indexType = onlyMember.parameters[0]
-                .typeAnnotation! as t.TSTypeAnnotation;
+            if (onlyMember.type === 'TSIndexSignature') {
+              const indexType = onlyMember.parameters[0].typeAnnotation! as t.TSTypeAnnotation;
               if (
-                indexType.typeAnnotation.type !== "TSStringKeyword" &&
-                indexType.typeAnnotation.type !== "TSNumberKeyword"
+                indexType.typeAnnotation.type !== 'TSStringKeyword' &&
+                indexType.typeAnnotation.type !== 'TSNumberKeyword'
               ) {
                 const recordType: t.TSType[] = [
                   t.tsTypeReference(
-                    t.identifier("Record"),
+                    t.identifier('Record'),
                     t.tsTypeParameterInstantiation([
                       indexType.typeAnnotation,
                       onlyMember.typeAnnotation!.typeAnnotation,
@@ -864,7 +745,7 @@ function actuallyMigrateType(
                   ),
                 ];
                 return t.tsTypeReference(
-                  t.identifier("Partial"),
+                  t.identifier('Partial'),
                   t.tsTypeParameterInstantiation(recordType)
                 );
               }
@@ -884,19 +765,19 @@ function actuallyMigrateType(
       }
     }
 
-    case "StringLiteralTypeAnnotation":
+    case 'StringLiteralTypeAnnotation':
       return t.tsLiteralType(t.stringLiteral(flowType.value));
 
-    case "StringTypeAnnotation":
+    case 'StringTypeAnnotation':
       return t.tsStringKeyword();
 
-    case "SymbolTypeAnnotation":
+    case 'SymbolTypeAnnotation':
       return t.tsSymbolKeyword();
 
-    case "ThisTypeAnnotation":
+    case 'ThisTypeAnnotation':
       return t.tsThisType();
 
-    case "TupleTypeAnnotation": {
+    case 'TupleTypeAnnotation': {
       return t.tsTupleType(
         flowType.types.map((elementType) => {
           return migrateType(reporter, state, elementType);
@@ -904,18 +785,22 @@ function actuallyMigrateType(
       );
     }
 
-    case "TypeofTypeAnnotation": {
+    case 'TypeofTypeAnnotation': {
       const tsType = migrateType(reporter, state, flowType.argument);
 
-      if (tsType.type !== "TSTypeReference")
+      if (tsType.type === 'TSAnyKeyword') {
+        return t.tsTypeQuery(t.identifier('any'));
+      }
+      if (tsType.type !== 'TSTypeReference') {
         throw new Error(`Unexpected AST node: ${JSON.stringify(tsType.type)}`);
+      }
       if (tsType.typeParameters)
-        throw new Error("Unexpected type parameters on `typeof` argument.");
+        throw new Error('Unexpected type parameters on `typeof` argument.');
 
       return t.tsTypeQuery(tsType.typeName);
     }
 
-    case "UnionTypeAnnotation": {
+    case 'UnionTypeAnnotation': {
       let anyMemberIndex: number | null = null;
 
       const tsUnionType = t.tsUnionType(
@@ -924,32 +809,27 @@ function actuallyMigrateType(
 
           // If one of the union members is `any` then flatten out the union to just that.
           // This happens fairly frequently for types coming from `flowTypeAtPos()`.
-          if (anyMemberIndex !== null && tsMemberType.type === "TSAnyKeyword") {
+          if (anyMemberIndex !== null && tsMemberType.type === 'TSAnyKeyword') {
             anyMemberIndex = i;
           }
 
           // Function types have weird specificities in intersections/unions. Wrap them in
           // parentheses to preserve the AST specificity.
-          return tsMemberType.type === "TSFunctionType"
+          return tsMemberType.type === 'TSFunctionType'
             ? t.tsParenthesizedType(tsMemberType)
             : tsMemberType;
         })
       );
 
-      return anyMemberIndex !== null
-        ? tsUnionType.types[anyMemberIndex]
-        : tsUnionType;
+      return anyMemberIndex !== null ? tsUnionType.types[anyMemberIndex] : tsUnionType;
     }
 
-    case "VoidTypeAnnotation":
+    case 'VoidTypeAnnotation':
       if (metaData?.returnType) {
         return t.tsVoidKeyword();
       } else if (
         metaData?.path?.findParent(
-          (n) =>
-            t.isGenericTypeAnnotation(n) &&
-            t.isIdentifier(n.id) &&
-            n.id.name === "Promise"
+          (n) => t.isGenericTypeAnnotation(n) && t.isIdentifier(n.id) && n.id.name === 'Promise'
         )
       ) {
         return t.tsVoidKeyword();
@@ -962,7 +842,7 @@ function actuallyMigrateType(
       reporter.unhandledFlowInputNode(
         state.config.filePath,
         flowType.loc as t.SourceLocation,
-        (flowType as unknown as { name: string }).name ?? "undefined",
+        (flowType as unknown as { name: string }).name ?? 'undefined',
         JSON.stringify(never.type)
       );
       return t.tsUnknownKeyword();

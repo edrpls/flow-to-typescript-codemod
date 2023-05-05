@@ -17,7 +17,7 @@
   ],
   "scripts": {
     "build": "./esBuild.js",
-    "dev": "yarn build && node ./dist/index.js",
+    "dev": "ts-node ./src/index.ts",
     "typescriptify": "yarn build && node ./dist/index.js",
     "lint": "eslint --ext ts src",
     "prepare": "yarn patch-package",
@@ -73,6 +73,7 @@
     "yargs": "^17.2.1"
   },
   "dependencies": {
-    "simple-git": "^3.18.0"
+    "simple-git": "^3.18.0",
+    "ts-node": "^10.9.1"
   }
 }
