@@ -39,6 +39,12 @@ function actuallyMigrateType(
     case 'AnyTypeAnnotation':
       return t.tsAnyKeyword();
 
+    // case 'OptionalIndexedAccessType':
+    case 'IndexedAccessType': {
+      console.log({ flowType, metaData });
+      return t.tsUnknownKeyword();
+    }
+
     case 'ArrayTypeAnnotation':
       return t.tsArrayType(migrateType(reporter, state, flowType.elementType));
 

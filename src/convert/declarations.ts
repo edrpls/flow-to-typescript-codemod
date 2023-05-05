@@ -1,5 +1,5 @@
-import * as t from "@babel/types";
-import traverse from "@babel/traverse";
+import * as t from '@babel/types';
+import traverse from '@babel/traverse';
 
 import {
   replaceWith,
@@ -7,53 +7,89 @@ import {
   isInsideCreateReactClass,
   buildTSIdentifier,
   getLoc,
-} from "./utils/common";
-import { migrateType } from "./migrate/type";
+} from './utils/common';
+import { migrateType } from './migrate/type';
 import {
   migrateTypeParameterDeclaration,
   migrateTypeParameterInstantiation,
-} from "./migrate/type-parameter";
-import { migrateQualifiedIdentifier } from "./migrate/qualified-identifier";
-import { annotateParamsWithFlowTypeAtPos } from "./flow/annotate-params";
-import { functionVisitor } from "./function-visitor";
-import { TransformerInput } from "./transformer";
-import { ReactTypes } from "./utils/type-mappings";
-import { flowTypeAtPos } from "./flow/type-at-pos";
+} from './migrate/type-parameter';
+import { migrateQualifiedIdentifier } from './migrate/qualified-identifier';
+import { annotateParamsWithFlowTypeAtPos } from './flow/annotate-params';
+import { functionVisitor } from './function-visitor';
+import { TransformerInput } from './transformer';
+import { ReactTypes, VtkTypes } from './utils/type-mappings';
+import { flowTypeAtPos } from './flow/type-at-pos';
 
 /**
  * Rename React imports for TypeScript
  */
-const updateReactImports = (
-  node: t.ImportDeclaration,
-  specifier: t.ImportSpecifier
-) => {
+const updateReactImports = (node: t.ImportDeclaration, specifier: t.ImportSpecifier) => {
   if (
-    node.source.value === "react" &&
-    (specifier.importKind === "type" || node.importKind === "type")
+    node.source.value === 'react' &&
+    (specifier.importKind === 'type' || node.importKind === 'type')
   ) {
     // `import type {Node} from 'react'` => `import {ReactNode} from 'react'`
     if (
-      specifier.type === "ImportSpecifier" &&
-      specifier.imported.type === "Identifier" &&
+      specifier.type === 'ImportSpecifier' &&
+      specifier.imported.type === 'Identifier' &&
       specifier.imported.name in ReactTypes
     ) {
-      specifier.imported.name =
-        ReactTypes[specifier.imported.name as keyof typeof ReactTypes];
+      specifier.imported.name = ReactTypes[specifier.imported.name as keyof typeof ReactTypes];
     }
     // `import {type Node} from 'react'` => `import {ReactNode} from 'react'`
     if (
-      specifier.type === "ImportSpecifier" &&
-      specifier.local.type === "Identifier" &&
+      specifier.type === 'ImportSpecifier' &&
+      specifier.local.type === 'Identifier' &&
       specifier.local.name in ReactTypes
     ) {
-      specifier.local.name =
-        ReactTypes[specifier.local.name as keyof typeof ReactTypes];
+      specifier.local.name = ReactTypes[specifier.local.name as keyof typeof ReactTypes];
     }
     // `import type {ReactNode as ReactNode} from 'react'` => `import {ReactNode} from 'react'`
     if (
-      specifier.type === "ImportSpecifier" &&
-      specifier.local.type === "Identifier" &&
-      specifier.imported.type === "Identifier" &&
+      specifier.type === 'ImportSpecifier' &&
+      specifier.local.type === 'Identifier' &&
+      specifier.imported.type === 'Identifier' &&
+      specifier.imported.name === specifier.local.name
+    ) {
+      // @ts-expect-error local is not optional, but setting equal doesn't work
+      delete specifier.local;
+    }
+  }
+};
+
+/**
+ * Rename Vtk imports for TypeScript
+ */
+//TODO: CONTINUE HERE
+const updateVtkImports = (node: t.ImportDeclaration, specifier: t.ImportSpecifier) => {
+  console.log({ source: node.source.value });
+  console.log({ specifier });
+  if (
+    // TODO: CONTINUE HERE AND IMPROVE SOURCE CHECK
+    node.source.value.includes('vtk.js') &&
+    (specifier.importKind === 'type' || node.importKind === 'type')
+  ) {
+    // `import type {Node} from 'vtk'` => `import {ReactNode} from 'react'`
+    if (
+      specifier.type === 'ImportSpecifier' &&
+      specifier.imported.type === 'Identifier' &&
+      specifier.imported.name in VtkTypes
+    ) {
+      specifier.imported.name = VtkTypes[specifier.imported.name as keyof typeof VtkTypes];
+    }
+    // `import {type Node} from 'react'` => `import {ReactNode} from 'react'`
+    if (
+      specifier.type === 'ImportSpecifier' &&
+      specifier.local.type === 'Identifier' &&
+      specifier.local.name in VtkTypes
+    ) {
+      specifier.local.name = VtkTypes[specifier.local.name as keyof typeof VtkTypes];
+    }
+    // `import type {ReactNode as ReactNode} from 'react'` => `import {ReactNode} from 'react'`
+    if (
+      specifier.type === 'ImportSpecifier' &&
+      specifier.local.type === 'Identifier' &&
+      specifier.imported.type === 'Identifier' &&
       specifier.imported.name === specifier.local.name
     ) {
       // @ts-expect-error local is not optional, but setting equal doesn't work
@@ -72,21 +108,17 @@ export function transformDeclarations({
   traverse(file, {
     ImportDeclaration(path) {
       // `import typeof X from` => `import {...} from`
-      if (path.node.importKind === "typeof") {
-        path.node.importKind = "value";
+      if (path.node.importKind === 'typeof') {
+        path.node.importKind = 'value';
       }
 
       // `import X from `foo.js` -> extension warning
       if (path.node.source) {
         const { value } = path.node.source;
-        const isJS = value.endsWith(".js");
-        const isJSX = value.endsWith(".jsx");
+        const isJS = value.endsWith('.js');
+        const isJSX = value.endsWith('.jsx');
         if (isJS || isJSX) {
-          reporter.importWithExtension(
-            state.config.filePath,
-            getLoc(path.node),
-            value
-          );
+          reporter.importWithExtension(state.config.filePath, getLoc(path.node), value);
         }
 
         if (state.config.dropImportExtensions) {
@@ -102,13 +134,14 @@ export function transformDeclarations({
       if (path.node.specifiers) {
         for (const specifier of path.node.specifiers) {
           if (
-            specifier.type === "ImportSpecifier" &&
-            (specifier.importKind === "type" || path.node.importKind === "type")
+            specifier.type === 'ImportSpecifier' &&
+            (specifier.importKind === 'type' || path.node.importKind === 'type')
           ) {
             updateReactImports(path.node, specifier);
+            updateVtkImports(path.node, specifier);
 
             // `import {type X} from` => `import {X} from`
-            if (specifier.importKind === "type") {
+            if (specifier.importKind === 'type') {
               specifier.importKind = null;
             }
           }
@@ -117,9 +150,7 @@ export function transformDeclarations({
         return;
       }
 
-      throw new Error(
-        `Unrecognized import kind: ${JSON.stringify(path.node.importKind)}`
-      );
+      throw new Error(`Unrecognized import kind: ${JSON.stringify(path.node.importKind)}`);
     },
 
     ExportAllDeclaration(path) {
@@ -132,11 +163,7 @@ export function transformDeclarations({
         t.tsTypeAliasDeclaration(
           path.node.id,
           path.node.typeParameters
-            ? migrateTypeParameterDeclaration(
-                reporter,
-                state,
-                path.node.typeParameters
-              )
+            ? migrateTypeParameterDeclaration(reporter, state, path.node.typeParameters)
             : null,
           migrateType(reporter, state, path.node.right)
         ),
@@ -158,11 +185,7 @@ export function transformDeclarations({
         t.tsTypeAliasDeclaration(
           path.node.id,
           path.node.typeParameters
-            ? migrateTypeParameterDeclaration(
-                reporter,
-                state,
-                path.node.typeParameters
-              )
+            ? migrateTypeParameterDeclaration(reporter, state, path.node.typeParameters)
             : null,
           migrateType(reporter, state, path.node.impltype)
         ),
@@ -173,16 +196,12 @@ export function transformDeclarations({
 
     InterfaceDeclaration(path) {
       if (path.node.mixins && path.node.mixins.length > 0)
-        throw new Error("Interface `mixins` are unsupported.");
+        throw new Error('Interface `mixins` are unsupported.');
       if (path.node.implements && path.node.implements.length > 0)
-        throw new Error("Interface `implements` are unsupported.");
+        throw new Error('Interface `implements` are unsupported.');
 
       const typeParameters = path.node.typeParameters
-        ? migrateTypeParameterDeclaration(
-            reporter,
-            state,
-            path.node.typeParameters
-          )
+        ? migrateTypeParameterDeclaration(reporter, state, path.node.typeParameters)
         : null;
 
       const extends_ = path.node.extends
@@ -190,11 +209,7 @@ export function transformDeclarations({
             const tsExtends = t.tsExpressionWithTypeArguments(
               migrateQualifiedIdentifier(flowExtends.id),
               flowExtends.typeParameters
-                ? migrateTypeParameterInstantiation(
-                    reporter,
-                    state,
-                    flowExtends.typeParameters
-                  )
+                ? migrateTypeParameterInstantiation(reporter, state, flowExtends.typeParameters)
                 : null
             );
             inheritLocAndComments(flowExtends, tsExtends);
@@ -233,16 +248,10 @@ export function transformDeclarations({
 
         // this tuple is not literally len(2) but rather is an n-dimensional tuple based on the length of the supplied array
         const tupleTypes = path.node.elements.map((node) => {
-          if (
-            node?.type === "Identifier" &&
-            t.isTypeAnnotation(node.typeAnnotation)
-          ) {
+          if (node?.type === 'Identifier' && t.isTypeAnnotation(node.typeAnnotation)) {
             const originalType = node.typeAnnotation.typeAnnotation;
             if (!isInsideFunction) {
-              reporter.invalidArrayPatternType(
-                state.config.filePath,
-                getLoc(node)
-              );
+              reporter.invalidArrayPatternType(state.config.filePath, getLoc(node));
             }
             node.typeAnnotation = null;
             return migrateType(reporter, state, originalType);
@@ -252,35 +261,27 @@ export function transformDeclarations({
         });
 
         if (isInsideFunction) {
-          path.node.typeAnnotation = t.tsTypeAnnotation(
-            t.tsTupleType(tupleTypes)
-          );
+          path.node.typeAnnotation = t.tsTypeAnnotation(t.tsTupleType(tupleTypes));
         }
       },
     },
 
     VariableDeclarator(path) {
       if (
-        path.parent.type === "VariableDeclaration" &&
-        path.parentPath.parent.type !== "ForStatement" &&
-        path.parentPath.parent.type !== "ForInStatement" &&
-        path.parentPath.parent.type !== "ForOfStatement" &&
-        path.node.id.type === "Identifier" &&
+        path.parent.type === 'VariableDeclaration' &&
+        path.parentPath.parent.type !== 'ForStatement' &&
+        path.parentPath.parent.type !== 'ForInStatement' &&
+        path.parentPath.parent.type !== 'ForOfStatement' &&
+        path.node.id.type === 'Identifier' &&
         path.node.id.typeAnnotation == null
       ) {
         // `let x = {};` → `let x: Record<string, any> = {};`
         // If assigning an empty object literal, typescript cannot correct infer the type.
-        if (
-          path.node.init?.type === "ObjectExpression" &&
-          path.node.init.properties.length === 0
-        ) {
+        if (path.node.init?.type === 'ObjectExpression' && path.node.init.properties.length === 0) {
           path.node.id.typeAnnotation = t.tsTypeAnnotation(
             t.tsTypeReference(
-              t.identifier("Record"),
-              t.tsTypeParameterInstantiation([
-                t.tsStringKeyword(),
-                t.tsAnyKeyword(),
-              ])
+              t.identifier('Record'),
+              t.tsTypeParameterInstantiation([t.tsStringKeyword(), t.tsAnyKeyword()])
             )
           );
         } else if (state.config.isTestFile) {
@@ -291,12 +292,12 @@ export function transformDeclarations({
           if (path.node.init === null) {
             path.node.id.typeAnnotation = t.tsTypeAnnotation(t.tsAnyKeyword());
           } else if (
-            path.node.init?.type === "ArrayExpression" &&
+            path.node.init?.type === 'ArrayExpression' &&
             path.node.init.elements.length === 0
           ) {
             path.node.id.typeAnnotation = t.tsTypeAnnotation(
               t.tsTypeReference(
-                t.identifier("Array"),
+                t.identifier('Array'),
                 t.tsTypeParameterInstantiation([t.tsAnyKeyword()])
               )
             );
@@ -304,7 +305,7 @@ export function transformDeclarations({
         }
 
         if (
-          path.node.init?.type === "ArrayExpression" &&
+          path.node.init?.type === 'ArrayExpression' &&
           path.node.init.elements.length === 0 &&
           !path.node.id.typeAnnotation
         ) {
@@ -326,13 +327,12 @@ export function transformDeclarations({
                   // means you can do anything with the type effectively making it any. So
                   // treat it as such.
                   const tsType =
-                    flowType.type === "EmptyTypeAnnotation"
+                    flowType.type === 'EmptyTypeAnnotation'
                       ? t.tsAnyKeyword()
                       : migrateType(reporter, state, flowType);
 
                   // Typescript loses the type check on L#299 here, so we're just putting it back.
-                  (path.node.id as t.Identifier).typeAnnotation =
-                    t.tsTypeAnnotation(tsType);
+                  (path.node.id as t.Identifier).typeAnnotation = t.tsTypeAnnotation(tsType);
                 })
                 .catch((err) => {
                   reporter.error(state.config.filePath, err);
@@ -345,21 +345,18 @@ export function transformDeclarations({
       // If we're exporting a constant Object or Array, there's a good chance it can be annotated 'as const'
       // which allows it to be used in type definitions easier.
       // If it is not an empty object, and is not already annotated.
-      const isExported =
-        path.parentPath.parent.type === "ExportNamedDeclaration";
+      const isExported = path.parentPath.parent.type === 'ExportNamedDeclaration';
       const isConstDeclaration =
-        path.parent.type === "VariableDeclaration" &&
-        path.parent.kind === "const";
+        path.parent.type === 'VariableDeclaration' && path.parent.kind === 'const';
       const isObjectDeclaration =
-        path.node.init?.type === "ObjectExpression" &&
-        path.node.init.properties.length > 0;
+        path.node.init?.type === 'ObjectExpression' && path.node.init.properties.length > 0;
       const isArrayDeclaration =
-        path.node.init?.type === "ArrayExpression" &&
+        path.node.init?.type === 'ArrayExpression' &&
         path.node.init.elements.length > 0 &&
-        path.parent.type === "VariableDeclaration" &&
-        path.parent.kind === "const";
+        path.parent.type === 'VariableDeclaration' &&
+        path.parent.kind === 'const';
       const hasTypeAnnotation =
-        path.node.id.type === "Identifier" &&
+        path.node.id.type === 'Identifier' &&
         path.node.id.typeAnnotation !== undefined &&
         path.node.id.typeAnnotation !== null;
       if (
@@ -369,7 +366,7 @@ export function transformDeclarations({
       ) {
         const asExpression = t.tsAsExpression(
           path.node.init as t.Expression,
-          t.tsTypeReference(t.identifier("const"))
+          t.tsTypeReference(t.identifier('const'))
         );
         inheritLocAndComments(path.node.init as t.Expression, asExpression);
         path.node.init = asExpression;
@@ -379,37 +376,28 @@ export function transformDeclarations({
       // Flow may allow this and type the resulting state variable as `empty`
       // which behaves like `any`. TypeScript will throw an error without the type.
       if (
-        path.node.init?.type === "CallExpression" &&
-        path.node.init.callee.type === "MemberExpression" &&
+        path.node.init?.type === 'CallExpression' &&
+        path.node.init.callee.type === 'MemberExpression' &&
         !path.node.init.typeArguments &&
         !path.node.init.typeParameters
       ) {
         const call = path.node.init;
         const member = path.node.init.callee;
-        const isReact =
-          t.isIdentifier(member.object) && member.object.name === "React";
-        const isUseState =
-          t.isIdentifier(member.property) &&
-          member.property.name === "useState";
+        const isReact = t.isIdentifier(member.object) && member.object.name === 'React';
+        const isUseState = t.isIdentifier(member.property) && member.property.name === 'useState';
         const noInitialValue = call.arguments.length === 0;
-        const nullInitialValue =
-          call.arguments.length === 1 && t.isNullLiteral(call.arguments[0]);
+        const nullInitialValue = call.arguments.length === 1 && t.isNullLiteral(call.arguments[0]);
         const undefinedInitialValue =
           call.arguments.length === 1 &&
           t.isIdentifier(call.arguments[0]) &&
-          call.arguments[0].name === "undefined";
+          call.arguments[0].name === 'undefined';
         if (
           isReact &&
           isUseState &&
           (noInitialValue || nullInitialValue || undefinedInitialValue)
         ) {
-          reporter.untypedStateInitialization(
-            state.config.filePath,
-            getLoc(path.node)
-          );
-          path.node.init.typeParameters = t.tsTypeParameterInstantiation([
-            t.tsAnyKeyword(),
-          ]);
+          reporter.untypedStateInitialization(state.config.filePath, getLoc(path.node));
+          path.node.init.typeParameters = t.tsTypeParameterInstantiation([t.tsAnyKeyword()]);
         }
       }
     },
@@ -431,11 +419,7 @@ export function transformDeclarations({
 
       if (t.isIdentifier(node.param)) {
         const { param } = node;
-        node.param = buildTSIdentifier(
-          param.name,
-          false,
-          t.tsTypeAnnotation(t.tsAnyKeyword())
-        );
+        node.param = buildTSIdentifier(param.name, false, t.tsTypeAnnotation(t.tsAnyKeyword()));
       }
     },
 
@@ -443,7 +427,7 @@ export function transformDeclarations({
       // `class { +prop: boolean }` => `class { readonly prop: boolean }`
       // the typescript decls for ClassProperty don't have variance for some reason
       const nodeAsAny = path.node;
-      if (nodeAsAny.variance && nodeAsAny.variance.kind === "plus") {
+      if (nodeAsAny.variance && nodeAsAny.variance.kind === 'plus') {
         nodeAsAny.variance = null;
         nodeAsAny.readonly = true;
       }
@@ -456,21 +440,19 @@ export function transformDeclarations({
         // If it extends React.Component, we may need to modify the type to make sure it's still valid
         // in TS. Some parameters like null make it an invalid component.
         const isReactComponent =
-          node.superClass.type === "MemberExpression" &&
+          node.superClass.type === 'MemberExpression' &&
           t.isIdentifier(node.superClass.object) &&
           t.isIdentifier(node.superClass.property) &&
-          node.superClass.object.name === "React" &&
-          node.superClass.property.name === "Component";
+          node.superClass.object.name === 'React' &&
+          node.superClass.property.name === 'Component';
 
         const nullSecondParam =
           node.superTypeParameters.params.length === 2 &&
-          node.superTypeParameters.params[1].type ===
-            "NullLiteralTypeAnnotation";
+          node.superTypeParameters.params[1].type === 'NullLiteralTypeAnnotation';
 
         // React.Component<Props, null> -> React.Component<Props> (null makes it invalid JSX)
         if (isReactComponent && nullSecondParam) {
-          node.superTypeParameters.params =
-            node.superTypeParameters.params.slice(0, 1);
+          node.superTypeParameters.params = node.superTypeParameters.params.slice(0, 1);
         }
 
         // Process the type parameters
