@@ -72,5 +72,7 @@
     "typescript": "^4.7.2",
     "yargs": "^17.2.1"
   },
-  "dependencies": {}
+  "dependencies": {
+    "simple-git": "^3.18.0"
+  }
 }

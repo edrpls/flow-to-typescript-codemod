@@ -149,7 +149,8 @@ export async function processBatchAsync(
           }
         }
 
-        await fs.outputFile(tsFilePath, newFileText);
+        await fs.outputFile(targetFilePath, newFileText);
+        reporter.success(targetFilePath, state.hasJsx);
       } catch (error) {
         // Report errors, but don’t crash the worker...
         reporter.error(filePath, error);
