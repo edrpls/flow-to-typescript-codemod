@@ -66,6 +66,9 @@ const updateVtkImports = (node: t.ImportDeclaration, specifier: t.ImportSpecifie
   console.log({ specifier });
   if (
     // TODO: CONTINUE HERE AND IMPROVE SOURCE CHECK
+    // - check if source is vtk.js
+    // - fix paths for Math vectors
+    // - matrices come from gl-matrix
     node.source.value.includes('vtk.js') &&
     (specifier.importKind === 'type' || node.importKind === 'type')
   ) {
