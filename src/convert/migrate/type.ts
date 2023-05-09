@@ -7,7 +7,13 @@ import {
 } from './type-parameter';
 import { migrateQualifiedIdentifier } from './qualified-identifier';
 import { migrateObjectMember } from './object-members';
-import { ReactTypes, SyntheticEvents, MomentTypes } from '../utils/type-mappings';
+import {
+  ReactTypes,
+  SyntheticEvents,
+  MomentTypes,
+  VtkTypes,
+  GqlTypes,
+} from '../utils/type-mappings';
 import { State } from '../../runner/state';
 import { matchesFullyQualifiedName } from '../utils/matchers';
 import { migrateFunctionParameters } from './function-parameter';
@@ -623,6 +629,16 @@ function actuallyMigrateType(
           ),
           params
         );
+      }
+
+      // VTK types
+      if (id.type === 'Identifier' && id.name in VtkTypes) {
+        return t.tsTypeReference(t.identifier(VtkTypes[id.name as keyof typeof VtkTypes]), params);
+      }
+
+      // GQL types
+      if (id.type === 'Identifier' && id.name in GqlTypes) {
+        return t.tsTypeReference(t.identifier(GqlTypes[id.name as keyof typeof GqlTypes]), params);
       }
 
       return t.tsTypeReference(id, params);
