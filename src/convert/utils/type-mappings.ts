@@ -37,3 +37,9 @@ export const VtkTypes = {
   vec4: 'Vector4',
   mat3: 'Matrix3x3',
 } as const;
+
+export const GqlTypes = {
+  AiAnnotationTypesValues: 'AiAnnotationTypes',
+  AiAnnotationGroupStatusValues: 'AiAnnotationGroupStatus',
+  SortColumnValues: 'SortColumn',
+} as const;

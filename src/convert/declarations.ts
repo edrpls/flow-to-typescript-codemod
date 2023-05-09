@@ -17,7 +17,7 @@ import { migrateQualifiedIdentifier } from './migrate/qualified-identifier';
 import { annotateParamsWithFlowTypeAtPos } from './flow/annotate-params';
 import { functionVisitor } from './function-visitor';
 import { TransformerInput } from './transformer';
-import { ReactTypes, VtkTypes } from './utils/type-mappings';
+import { GqlTypes, ReactTypes, VtkTypes } from './utils/type-mappings';
 import { flowTypeAtPos } from './flow/type-at-pos';
 
 /**
@@ -58,9 +58,39 @@ const updateReactImports = (node: t.ImportDeclaration, specifier: t.ImportSpecif
 };
 
 /**
+ * Rename Gql imports for TypeScript
+ */
+const updateGqlImports = (node: t.ImportDeclaration, specifier: t.ImportSpecifier) => {
+  if (node.source.value === 'generated/graphql') {
+    if (
+      specifier.type === 'ImportSpecifier' &&
+      specifier.imported.type === 'Identifier' &&
+      specifier.imported.name in GqlTypes
+    ) {
+      specifier.imported.name = GqlTypes[specifier.imported.name as keyof typeof GqlTypes];
+    }
+    if (
+      specifier.type === 'ImportSpecifier' &&
+      specifier.local.type === 'Identifier' &&
+      specifier.local.name in GqlTypes
+    ) {
+      specifier.local.name = GqlTypes[specifier.local.name as keyof typeof GqlTypes];
+    }
+    if (
+      specifier.type === 'ImportSpecifier' &&
+      specifier.local.type === 'Identifier' &&
+      specifier.imported.type === 'Identifier' &&
+      specifier.imported.name === specifier.local.name
+    ) {
+      // @ts-expect-error local is not optional, but setting equal doesn't work
+      delete specifier.local;
+    }
+  }
+};
+
+/**
  * Rename Vtk imports for TypeScript
  */
-//TODO: CONTINUE HERE
 const updateVtkImports = (node: t.ImportDeclaration, specifier: t.ImportSpecifier) => {
   const isVtkMathImport = node.source.value === '@kitware/vtk.js/Common/Core/Math';
   const isVtkUpdatedImport = node.source.value === '@kitware/vtk.js/types';
@@ -132,6 +162,13 @@ export function transformDeclarations({
       // `import {...} from`
       if (path.node.specifiers) {
         for (const specifier of path.node.specifiers) {
+          if (
+            specifier.type === 'ImportSpecifier' &&
+            path.node.source.value === 'generated/graphql'
+          ) {
+            updateGqlImports(path.node, specifier);
+          }
+
           if (
             specifier.type === 'ImportSpecifier' &&
             (specifier.importKind === 'type' || path.node.importKind === 'type')

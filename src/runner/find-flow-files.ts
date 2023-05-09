@@ -6,10 +6,10 @@
  * [1]: https://github.com/facebook/flow/blob/6491b1ac744dcac82ad07f4d9ff9deb6b977275d/packages/flow-upgrade/src/findFlowFiles.js
  */
 
-import path from "path";
-import fs from "fs-extra";
-import ignore from "ignore";
-import MigrationReporter from "./migration-reporter";
+import path from 'path';
+import fs from 'fs-extra';
+import ignore from 'ignore';
+import MigrationReporter from './migration-reporter';
 
 /**
  * How many bytes we should look at for the Flow pragma.
@@ -36,13 +36,6 @@ export function findFlowFilesAsync(
   reporter: MigrationReporter,
   stripPathsForIgnore: boolean
 ): Promise<FlowFileList> {
-  console.log(
-    JSON.stringify(
-      { rootDirectory, ignoredDirectories, reporter, stripPathsForIgnore },
-      null,
-      2
-    ));
-    // return;
   return new Promise((_resolve, _reject) => {
     // Tracks whether or not we have rejected our promise.
     let rejected = false;
@@ -74,12 +67,7 @@ export function findFlowFilesAsync(
         }
         // Process every file name that we got from reading the directory.
         for (let i = 0; i < fileNames.length; i++) {
-          processFilePath(
-            directory,
-            fileNames[i],
-            reporter,
-            stripPathsForIgnore
-          );
+          processFilePath(directory, fileNames[i], reporter, stripPathsForIgnore);
         }
         // We are done with this async task.
         done();
@@ -105,9 +93,7 @@ export function findFlowFilesAsync(
       // Get the file path for this file.
       const filePath = path.join(directory, fileName);
       // ignore doesn't handle relative paths, so strip them. This does not work in all edge cases so is behind a flag
-      const correctedPath = stripPathsForIgnore
-        ? filePath.replace(/^(?:\.\.\/)+/, "")
-        : filePath;
+      const correctedPath = stripPathsForIgnore ? filePath.replace(/^(?:\.\.\/)+/, '') : filePath;
       // ensure that path is valid so that ignore check doesn't throw
       if (ignore.isPathValid(correctedPath) && ig.ignores(correctedPath)) {
         done();
@@ -121,13 +107,13 @@ export function findFlowFilesAsync(
         // If this is a directory...
         if (stats.isDirectory()) {
           // ...and it is not an ignored directory...
-          if (fileName !== "node_modules" && fileName !== "transpiled") {
+          if (fileName !== 'node_modules' && fileName !== 'transpiled') {
             // ...then recursively process the directory.
             processDirectory(filePath, reporter);
           }
         } else if (stats.isFile()) {
           // Otherwise if this is a JavaScript file...
-          if (fileName.endsWith(".js") || fileName.endsWith(".jsx")) {
+          if (fileName.endsWith('.js') || fileName.endsWith('.jsx')) {
             // Then process the file path as JavaScript.
             processJavaScriptFilePath(filePath, stats.size, reporter);
           }
@@ -153,7 +139,7 @@ export function findFlowFilesAsync(
       // We are now waiting on this asynchronous task.
       waiting++;
       // Open the file path.
-      fs.open(filePath, "r", (error, file) => {
+      fs.open(filePath, 'r', (error, file) => {
         if (error) {
           return reject(error);
         }
@@ -168,9 +154,9 @@ export function findFlowFilesAsync(
           }
           // If the buffer has the @flow pragma then add the file path to our
           // final file paths array.
-          if (buffer.includes("@flow")) {
+          if (buffer.includes('@flow')) {
             filePaths.push({ filePath, fileType: FlowFileType.FLOW });
-          } else if (buffer.includes("@noflow")) {
+          } else if (buffer.includes('@noflow')) {
             filePaths.push({ filePath, fileType: FlowFileType.NO_FLOW });
             reporter.foundNoFlowAnnotation(filePath);
           } else {

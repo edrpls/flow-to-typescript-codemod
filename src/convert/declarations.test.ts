@@ -6,7 +6,7 @@ import {
   expectMigrationReporterMethodCalled,
   expectMigrationReporterMethodNotCalled,
 } from './utils/testing';
-import { ReactTypes, VtkTypes } from './utils/type-mappings';
+import { GqlTypes, ReactTypes, VtkTypes } from './utils/type-mappings';
 import { flowTypeAtPos } from './flow/type-at-pos';
 
 jest.mock('../runner/migration-reporter/migration-reporter.ts');
@@ -96,9 +96,25 @@ describe('transform declarations', () => {
       expectMigrationReporterMethodNotCalled(`importWithExtension`);
     });
 
-    // VTK
+    // GQL
+    describe('Flow to TypeScript GQL Codegen import transformations', () => {
+      Object.entries(GqlTypes).forEach(([flowType, tsType]) => {
+        it(`transforms type imports of ${flowType} from gql`, async () => {
+          const src = `import type {${flowType}} from 'generated/graphql';`;
+          const expected = `import type {${tsType}} from 'generated/graphql';`;
+          expect(await transform(src)).toBe(expected);
+        });
 
-    describe.only('Flow to TypeScript VTK import transformations', () => {
+        it(`transforms imports of ${flowType} from gql`, async () => {
+          const src = `import {${flowType}} from 'generated/graphql';`;
+          const expected = `import {${tsType}} from 'generated/graphql';`;
+          expect(await transform(src)).toBe(expected);
+        });
+      });
+    });
+
+    // VTK
+    describe('Flow to TypeScript VTK import transformations', () => {
       Object.entries(VtkTypes).forEach(([flowType, tsType]) => {
         it(`transforms type imports of ${flowType} from vtk`, async () => {
           const src = `import type {${flowType}} from '@kitware/vtk.js/Common/Core/Math';`;

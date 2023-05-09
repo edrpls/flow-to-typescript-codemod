@@ -41,7 +41,6 @@ function actuallyMigrateType(
 
     // case 'OptionalIndexedAccessType':
     case 'IndexedAccessType': {
-      console.log({ flowType, metaData });
       return t.tsUnknownKeyword();
     }
 
