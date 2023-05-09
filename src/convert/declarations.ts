@@ -62,17 +62,13 @@ const updateReactImports = (node: t.ImportDeclaration, specifier: t.ImportSpecif
  */
 //TODO: CONTINUE HERE
 const updateVtkImports = (node: t.ImportDeclaration, specifier: t.ImportSpecifier) => {
-  console.log({ source: node.source.value });
-  console.log({ specifier });
-  if (
-    // TODO: CONTINUE HERE AND IMPROVE SOURCE CHECK
-    // - check if source is vtk.js
-    // - fix paths for Math vectors
-    // - matrices come from gl-matrix
-    node.source.value.includes('vtk.js') &&
-    (specifier.importKind === 'type' || node.importKind === 'type')
-  ) {
-    // `import type {Node} from 'vtk'` => `import {ReactNode} from 'react'`
+  const isVtkMathImport = node.source.value === '@kitware/vtk.js/Common/Core/Math';
+  const isVtkUpdatedImport = node.source.value === '@kitware/vtk.js/types';
+  const isVtkImport = isVtkMathImport || isVtkUpdatedImport;
+  if (isVtkImport && (specifier.importKind === 'type' || node.importKind === 'type')) {
+    // CHANGE SOURCE IN TS
+    node.source.value = '@kitware/vtk.js/types';
+    // `import type { vec3 } from '@kitware/vtk.js/Common/Core/Math'` => `import { Vector3 } from '@kitware/vtk.js/types'`
     if (
       specifier.type === 'ImportSpecifier' &&
       specifier.imported.type === 'Identifier' &&
@@ -80,7 +76,7 @@ const updateVtkImports = (node: t.ImportDeclaration, specifier: t.ImportSpecifie
     ) {
       specifier.imported.name = VtkTypes[specifier.imported.name as keyof typeof VtkTypes];
     }
-    // `import {type Node} from 'react'` => `import {ReactNode} from 'react'`
+    // `import {type vec3} from '@kitware/vtk.js/Common/Core/Math'` => `import { Vector3 } from '@kitware/vtk.js/types'`
     if (
       specifier.type === 'ImportSpecifier' &&
       specifier.local.type === 'Identifier' &&

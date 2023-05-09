@@ -35,5 +35,5 @@ export const VtkTypes = {
   vec2: 'Vector2',
   vec3: 'Vector3',
   vec4: 'Vector4',
-  //mat3: "Matrix3x3", TODO: matrices come from gl-matrix
+  mat3: 'Matrix3x3',
 } as const;

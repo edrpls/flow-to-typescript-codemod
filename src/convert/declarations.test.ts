@@ -1,113 +1,125 @@
-import * as t from "@babel/types";
-import dedent from "dedent";
+import * as t from '@babel/types';
+import dedent from 'dedent';
 import {
   transform,
   stateBuilder,
   expectMigrationReporterMethodCalled,
   expectMigrationReporterMethodNotCalled,
-} from "./utils/testing";
-import { ReactTypes } from "./utils/type-mappings";
-import { flowTypeAtPos } from "./flow/type-at-pos";
+} from './utils/testing';
+import { ReactTypes, VtkTypes } from './utils/type-mappings';
+import { flowTypeAtPos } from './flow/type-at-pos';
 
-jest.mock("../runner/migration-reporter/migration-reporter.ts");
-jest.mock("./flow/type-at-pos.ts");
+jest.mock('../runner/migration-reporter/migration-reporter.ts');
+jest.mock('./flow/type-at-pos.ts');
 
-const mockFlowTypeAtPos = flowTypeAtPos as unknown as jest.MockedFunction<
-  typeof flowTypeAtPos
->;
+const mockFlowTypeAtPos = flowTypeAtPos as unknown as jest.MockedFunction<typeof flowTypeAtPos>;
 
-describe("transform declarations", () => {
+describe('transform declarations', () => {
   afterEach(() => {
     jest.clearAllMocks();
   });
 
-  describe("import declarations", () => {
-    it("does not transforms type imports", async () => {
+  describe('import declarations', () => {
+    it('does not transforms type imports', async () => {
       const src = `import type {foo} from './foo';`;
       const expected = `import type {foo} from './foo';`;
       expect(await transform(src)).toBe(expected);
     });
 
-    it("transforms typeof imports", async () => {
+    it('transforms typeof imports', async () => {
       const src = `import typeof {foo} from './foo';`;
       const expected = `import {foo} from './foo';`;
       expect(await transform(src)).toBe(expected);
     });
-    it("transforms default typeof imports", async () => {
+    it('transforms default typeof imports', async () => {
       const src = `import typeof Foo from './foo';`;
       const expected = `import Foo from './foo';`;
       expect(await transform(src)).toBe(expected);
     });
 
-    it("transforms named type imports", async () => {
+    it('transforms named type imports', async () => {
       const src = `import {type Foo} from './foo';`;
       const expected = `import {Foo} from './foo';`;
       expect(await transform(src)).toBe(expected);
     });
 
-    it("does not transform type exports", async () => {
+    it('does not transform type exports', async () => {
       const src = `export type {foo} from './foo';`;
       const expected = `export type {foo} from './foo';`;
       expect(await transform(src)).toBe(expected);
     });
 
-    it("transforms type * exports", async () => {
+    it('transforms type * exports', async () => {
       const src = `export type * from './foo';`;
       const expected = `export * from './foo';`;
       expect(await transform(src)).toBe(expected);
     });
 
-    it("warns for js imports", async () => {
+    it('warns for js imports', async () => {
       const src = `import {foo} from './foo.js';`;
       expect(await transform(src)).toBe(src);
       expectMigrationReporterMethodCalled(`importWithExtension`);
     });
 
-    it("warns for jsx imports", async () => {
+    it('warns for jsx imports', async () => {
       const src = `import {foo} from './foo.jsx';`;
       expect(await transform(src)).toBe(src);
       expectMigrationReporterMethodCalled(`importWithExtension`);
     });
 
-    it("drops js imports when flag is present", async () => {
+    it('drops js imports when flag is present', async () => {
       const src = `import {foo} from './foo.js';`;
       const expected = `import {foo} from './foo';`;
-      expect(
-        await transform(
-          src,
-          stateBuilder({ config: { dropImportExtensions: true } })
-        )
-      ).toBe(expected);
+      expect(await transform(src, stateBuilder({ config: { dropImportExtensions: true } }))).toBe(
+        expected
+      );
 
       expectMigrationReporterMethodCalled(`importWithExtension`);
     });
 
-    it("drops jsx imports when flag is present", async () => {
+    it('drops jsx imports when flag is present', async () => {
       const src = `import {foo} from './foo.jsx';`;
       const expected = `import {foo} from './foo';`;
-      expect(
-        await transform(
-          src,
-          stateBuilder({ config: { dropImportExtensions: true } })
-        )
-      ).toBe(expected);
+      expect(await transform(src, stateBuilder({ config: { dropImportExtensions: true } }))).toBe(
+        expected
+      );
 
       expectMigrationReporterMethodCalled(`importWithExtension`);
     });
 
-    it("does not convert extensions similar to js imports when flag is present", async () => {
+    it('does not convert extensions similar to js imports when flag is present', async () => {
       const src = `import {foo} from './foo.json';`;
-      expect(
-        await transform(
-          src,
-          stateBuilder({ config: { dropImportExtensions: true } })
-        )
-      ).toBe(src);
+      expect(await transform(src, stateBuilder({ config: { dropImportExtensions: true } }))).toBe(
+        src
+      );
 
       expectMigrationReporterMethodNotCalled(`importWithExtension`);
     });
 
-    describe("Flow to TypeScript React import transformations", () => {
+    // VTK
+
+    describe.only('Flow to TypeScript VTK import transformations', () => {
+      Object.entries(VtkTypes).forEach(([flowType, tsType]) => {
+        it(`transforms type imports of ${flowType} from vtk`, async () => {
+          const src = `import type {${flowType}} from '@kitware/vtk.js/Common/Core/Math';`;
+          const expected = `import type {${tsType}} from '@kitware/vtk.js/types';`;
+          expect(await transform(src)).toBe(expected);
+        });
+
+        it(`does not transform non-type imports of ${flowType} from vtk`, async () => {
+          const src = `import VTK, {${flowType}} from '@kitware/vtk.js/Common/Core/Math';`;
+          expect(await transform(src)).toBe(src);
+        });
+      });
+
+      it(`transforms type imports vtk with multiple imports`, async () => {
+        const src = `import type {vec2, vec3} from '@kitware/vtk.js/Common/Core/Math';`;
+        const expected = `import type {Vector2, Vector3} from '@kitware/vtk.js/types';`;
+        expect(await transform(src)).toBe(expected);
+      });
+    });
+
+    describe('Flow to TypeScript React import transformations', () => {
       Object.entries(ReactTypes).forEach(([flowType, tsType]) => {
         it(`transforms type imports of ${flowType} from react`, async () => {
           const src = `import type {${flowType}} from 'react';`;
@@ -179,13 +191,13 @@ describe("transform declarations", () => {
   });
   */
 
-  it("readonly class decls", async () => {
+  it('readonly class decls', async () => {
     const src = `class Foo { +prop: boolean; };`;
     const expected = `class Foo { readonly prop: boolean; };`;
     expect(await transform(src)).toBe(expected);
   });
 
-  it("removes annotations from constructors", async () => {
+  it('removes annotations from constructors', async () => {
     const src = dedent`class Test {
       constructor(props: any): void {
           console.log('test');
@@ -199,7 +211,7 @@ describe("transform declarations", () => {
     expect(await transform(src)).toBe(expected);
   });
 
-  it("fixes static methods when class has a generic", async () => {
+  it('fixes static methods when class has a generic', async () => {
     const src = dedent`class MyFoo<T> {
       static myMethod(bar: T) {}
     }`;
@@ -209,7 +221,7 @@ describe("transform declarations", () => {
     expect(await transform(src)).toBe(expected);
   });
 
-  it("fixes static methods when class has a generic that is bound", async () => {
+  it('fixes static methods when class has a generic that is bound', async () => {
     const src = dedent`class MyFoo<T: number> {
       static myMethod(bar: T) {}
     }`;
@@ -219,7 +231,7 @@ describe("transform declarations", () => {
     expect(await transform(src)).toBe(expected);
   });
 
-  it("transforms extended generic class declarations", async () => {
+  it('transforms extended generic class declarations', async () => {
     const src = dedent`
     class Base<P = {}, S = {}> {};
     class Impl extends Base<Function, {}> {};
@@ -231,7 +243,7 @@ describe("transform declarations", () => {
     expect(await transform(src)).toBe(expected);
   });
 
-  it("removes trailing commas from extended generic class declarations", async () => {
+  it('removes trailing commas from extended generic class declarations', async () => {
     const src = dedent`
     class Base<P = any, S = any> {};
     class Impl extends Base<{},> {};
@@ -243,37 +255,37 @@ describe("transform declarations", () => {
     expect(await transform(src)).toBe(expected);
   });
 
-  it("converts $Shape to Partial", async () => {
+  it('converts $Shape to Partial', async () => {
     const src = `type Test = $Shape<T>;`;
     const expected = `type Test = Partial<T>;`;
     expect(await transform(src)).toBe(expected);
   });
 
-  it("converts MapOf to Record", async () => {
+  it('converts MapOf to Record', async () => {
     const src = `type Test = MapOf<T>;`;
     const expected = `type Test = Record<string, T>;`;
     expect(await transform(src)).toBe(expected);
   });
 
-  it("converts MapOfWithKeyType to Record", async () => {
+  it('converts MapOfWithKeyType to Record', async () => {
     const src = `type Test = MapOfWithKeyType<S, T>;`;
     const expected = `type Test = Record<S, T>;`;
     expect(await transform(src)).toBe(expected);
   });
 
-  it("removes unnecessary $Exact types", async () => {
+  it('removes unnecessary $Exact types', async () => {
     const src = `type Test = $Exact<T>;`;
     const expected = `type Test = T;`;
     expect(await transform(src)).toBe(expected);
   });
 
-  it("converts $Exact spreads", async () => {
+  it('converts $Exact spreads', async () => {
     const src = `type Test = {...$Exact<T>};`;
     const expected = `type Test = (T);`;
     expect(await transform(src)).toBe(expected);
   });
 
-  it("converts more complicated $Exact types", async () => {
+  it('converts more complicated $Exact types', async () => {
     const src = dedent`type Test = $Exact<T | { foo: string }>;`;
     const expected = dedent`type Test = T | {
       foo: string
@@ -281,33 +293,33 @@ describe("transform declarations", () => {
     expect(await transform(src)).toBe(expected);
   });
 
-  it("converts $Subtype to any", async () => {
+  it('converts $Subtype to any', async () => {
     const src = `type Test = $Subtype<number>;`;
     const expected = dedent`
     type Test = any;`;
     expect(await transform(src)).toBe(expected);
-    expectMigrationReporterMethodCalled("usedFlowSubtype");
+    expectMigrationReporterMethodCalled('usedFlowSubtype');
   });
 
-  it("Converts $Values to indexed access type", async () => {
+  it('Converts $Values to indexed access type', async () => {
     const src = `type Foo = $Values<T>;`;
     const expected = `type Foo = T[keyof T];`;
     expect(await transform(src)).toBe(expected);
   });
 
-  it("Converts exported objects to as const", async () => {
+  it('Converts exported objects to as const', async () => {
     const src = `export const Obj = {'foo': 'bar'};`;
     const expected = `export const Obj = {'foo': 'bar'} as const;`;
     expect(await transform(src)).toBe(expected);
   });
 
-  it("Converts exported arrays to as const", async () => {
+  it('Converts exported arrays to as const', async () => {
     const src = `export const Arr = [1,2];`;
     const expected = `export const Arr = [1,2] as const;`;
     expect(await transform(src)).toBe(expected);
   });
 
-  it("does convert non exported objects to as const", async () => {
+  it('does convert non exported objects to as const', async () => {
     const src = `const Obj = {'foo': 'bar'};`;
     const expected = `const Obj = {'foo': 'bar'} as const;`;
     expect(await transform(src)).toBe(expected);
@@ -317,33 +329,33 @@ describe("transform declarations", () => {
     expect(await transform(arraySrc)).toBe(arrayExpected);
   });
 
-  it("does convert non exported arrays to as const", async () => {
+  it('does convert non exported arrays to as const', async () => {
     const arraySrc = `const Arr = [1,2];`;
 
     expect(await transform(arraySrc)).toBe(arraySrc);
   });
 
-  it("does not convert non constants to as const", async () => {
+  it('does not convert non constants to as const', async () => {
     const src = `export var Obj = {'foo': 'bar'};`;
     expect(await transform(src)).toBe(src);
     const arraySrc = `export var Arr = [1,2];`;
     expect(await transform(arraySrc)).toBe(arraySrc);
   });
 
-  it("does not convert typed constants to as const", async () => {
+  it('does not convert typed constants to as const', async () => {
     const src = `export const Obj: MyObj = {'foo': 'bar'};`;
     expect(await transform(src)).toBe(src);
     const arraySrc = `export const Arr: MyArr = [1,2];`;
     expect(await transform(arraySrc)).toBe(arraySrc);
   });
 
-  it("does not convert non objects as const", async () => {
+  it('does not convert non objects as const', async () => {
     const src = `export const Boo = false;`;
     expect(await transform(src)).toBe(src);
   });
 
-  describe("out of sequence optional parameters", () => {
-    it("should handle optional parameters that are out of sequence", async () => {
+  describe('out of sequence optional parameters', () => {
+    it('should handle optional parameters that are out of sequence', async () => {
       const src = dedent`
       function foo(a: ?number, b: ?number, c: string): number {}
     `;
@@ -355,7 +367,7 @@ describe("transform declarations", () => {
       expect(await transform(src)).toBe(expected);
     });
 
-    it("should keep parameters as optional if possible", async () => {
+    it('should keep parameters as optional if possible', async () => {
       const src = dedent`
       function foo(a: ?number, b: number, c: ?string): number {}
     `;
@@ -367,7 +379,7 @@ describe("transform declarations", () => {
       expect(await transform(src)).toBe(expected);
     });
 
-    it("should keep all parameters as optional if none are required", async () => {
+    it('should keep all parameters as optional if none are required', async () => {
       const src = dedent`
       function foo(a: ?number, b: ?number, c: ?string): number {}
     `;
@@ -379,7 +391,7 @@ describe("transform declarations", () => {
       expect(await transform(src)).toBe(expected);
     });
 
-    it("handles function declarations as well", async () => {
+    it('handles function declarations as well', async () => {
       const src = dedent`export const setReactRef = function(
       ref: ?number,
       current: string
@@ -393,7 +405,7 @@ describe("transform declarations", () => {
       expect(await transform(src)).toBe(expected);
     });
 
-    it("handles arrow functions also", async () => {
+    it('handles arrow functions also', async () => {
       const src = dedent`export const setReactRef = (
       ref: ?number,
       current: string
@@ -407,7 +419,7 @@ describe("transform declarations", () => {
       expect(await transform(src)).toBe(expected);
     });
 
-    it("handles class functions also", async () => {
+    it('handles class functions also', async () => {
       const src = dedent`export class MyClass {
       foo(bar: ?number, baz: string) {}
     }`;
@@ -418,7 +430,7 @@ describe("transform declarations", () => {
       expect(await transform(src)).toBe(expected);
     });
 
-    it("handles class properties", async () => {
+    it('handles class properties', async () => {
       const src = dedent`export class MyClass {
       foo: (bar: ?number, baz: string) => any;
     }`;
@@ -429,7 +441,7 @@ describe("transform declarations", () => {
       expect(await transform(src)).toBe(expected);
     });
 
-    it("handles instantiated class properties", async () => {
+    it('handles instantiated class properties', async () => {
       const src = dedent`export class MyClass {
       foo = (bar: ?number, baz: string) => {};
     }`;
@@ -440,7 +452,7 @@ describe("transform declarations", () => {
       expect(await transform(src)).toBe(expected);
     });
 
-    it("handles optional parameters", async () => {
+    it('handles optional parameters', async () => {
       const src = dedent`export default function (a?: string, b: number) {}`;
       const expected = dedent`export default function (a: string | null | undefined, b: number) {}`;
       expect(await transform(src)).toBe(expected);
@@ -470,7 +482,7 @@ describe("transform declarations", () => {
 
   // Try Catch
 
-  it("Adds any to catch clause when parameter is present", async () => {
+  it('Adds any to catch clause when parameter is present', async () => {
     const src = dedent`
     try {
       const foo = 'bar';
@@ -488,7 +500,7 @@ describe("transform declarations", () => {
     expect(await transform(src)).toBe(expected);
   });
 
-  it("Does not break if catch has no parameter", async () => {
+  it('Does not break if catch has no parameter', async () => {
     const src = dedent`
     try {
       const foo = 'bar';
@@ -501,7 +513,7 @@ describe("transform declarations", () => {
 
   // React
 
-  it("Converts React.Node to React.ReactNode in Props", async () => {
+  it('Converts React.Node to React.ReactNode in Props', async () => {
     const src = `type Props = {children?: React.Node};`;
     const expected = dedent`type Props = {
       children?: React.ReactNode
@@ -509,7 +521,7 @@ describe("transform declarations", () => {
     expect(await transform(src)).toBe(expected);
   });
 
-  it("Converts makes sure React.Component is valid JSX, with no null for state", async () => {
+  it('Converts makes sure React.Component is valid JSX, with no null for state', async () => {
     const src = dedent`class Foo extends React.Component<Props, null>  {
       test(): string {return 'string'};
     };`;
@@ -519,7 +531,7 @@ describe("transform declarations", () => {
     expect(await transform(src)).toBe(expected);
   });
 
-  it("Converts React.Node to React.ReactElement in render", async () => {
+  it('Converts React.Node to React.ReactElement in render', async () => {
     const src = dedent`class Foo extends React.Component {
       render(): React.Node {return <div />};
     };`;
@@ -529,7 +541,7 @@ describe("transform declarations", () => {
     expect(await transform(src)).toBe(expected);
   });
 
-  it("Adds null to React.ReactElement in render", async () => {
+  it('Adds null to React.ReactElement in render', async () => {
     const src = dedent`class Foo extends React.Component {
       render(): React.Node {
         if (foo) return (<div />);
@@ -545,7 +557,7 @@ describe("transform declarations", () => {
     expect(await transform(src)).toBe(expected);
   });
 
-  it("Converts React.Node to React.ReactElement for render in arrow", async () => {
+  it('Converts React.Node to React.ReactElement for render in arrow', async () => {
     const src = dedent`class Foo extends React.Component {
       render = (): React.Node => {return <div />};
     };`;
@@ -555,7 +567,7 @@ describe("transform declarations", () => {
     expect(await transform(src)).toBe(expected);
   });
 
-  it("Does not convert React.Node to React.ReactElement in non-render", async () => {
+  it('Does not convert React.Node to React.ReactElement in non-render', async () => {
     const src = dedent`class Foo extends React.Component {
       rendering(): React.Node {return <div />};
     };`;
@@ -565,99 +577,99 @@ describe("transform declarations", () => {
     expect(await transform(src)).toBe(expected);
   });
 
-  describe("untyped usestate", () => {
-    it("Applies any and creates warning for untyped empty useState.", async () => {
+  describe('untyped usestate', () => {
+    it('Applies any and creates warning for untyped empty useState.', async () => {
       const src = `const test = React.useState();`;
       const expected = `const test = React.useState<any>();`;
       expect(await transform(src)).toBe(expected);
-      expectMigrationReporterMethodCalled("untypedStateInitialization");
+      expectMigrationReporterMethodCalled('untypedStateInitialization');
     });
 
-    it("Applies any and creates warning Creates a warning for untyped null useState.", async () => {
+    it('Applies any and creates warning Creates a warning for untyped null useState.', async () => {
       const src = `const test = React.useState(null);`;
       const expected = `const test = React.useState<any>(null);`;
       expect(await transform(src)).toBe(expected);
-      expectMigrationReporterMethodCalled("untypedStateInitialization");
+      expectMigrationReporterMethodCalled('untypedStateInitialization');
     });
 
-    it("Applies any and creates warning Creates a warning for untyped undefined useState.", async () => {
+    it('Applies any and creates warning Creates a warning for untyped undefined useState.', async () => {
       const src = `const test = React.useState(undefined);`;
       const expected = `const test = React.useState<any>(undefined);`;
       expect(await transform(src)).toBe(expected);
-      expectMigrationReporterMethodCalled("untypedStateInitialization");
+      expectMigrationReporterMethodCalled('untypedStateInitialization');
     });
 
-    it("Does not create a warning for typed null useState.", async () => {
+    it('Does not create a warning for typed null useState.', async () => {
       const src = `const test = React.useState<boolean>(null);`;
       expect(await transform(src)).toBe(src);
-      expectMigrationReporterMethodNotCalled("untypedStateInitialization");
+      expectMigrationReporterMethodNotCalled('untypedStateInitialization');
     });
 
-    it("Does not create a warning for typed empty useState.", async () => {
+    it('Does not create a warning for typed empty useState.', async () => {
       const src = dedent`
       // @flow
       const test = React.useState<boolean>();`;
       const expected = dedent`
       const test = React.useState<boolean>();`;
       expect(await transform(src)).toBe(expected);
-      expectMigrationReporterMethodNotCalled("untypedStateInitialization");
+      expectMigrationReporterMethodNotCalled('untypedStateInitialization');
     });
 
-    it("Does not create a warning for inferred useState", async () => {
+    it('Does not create a warning for inferred useState', async () => {
       const src = `const test = React.useState('test');`;
       expect(await transform(src)).toBe(src);
-      expectMigrationReporterMethodNotCalled("untypedStateInitialization");
+      expectMigrationReporterMethodNotCalled('untypedStateInitialization');
     });
 
-    it("Does not create a warning for optional", async () => {
+    it('Does not create a warning for optional', async () => {
       const src = dedent`
       // @flow
       const [error, setError] = React.useState<?string>();`;
       const expected = dedent`
       const [error, setError] = React.useState<string | null | undefined>();`;
       expect(await transform(src)).toBe(expected);
-      expectMigrationReporterMethodNotCalled("untypedStateInitialization");
+      expectMigrationReporterMethodNotCalled('untypedStateInitialization');
     });
 
-    it("Does not create a warning for or null", async () => {
+    it('Does not create a warning for or null', async () => {
       const rootSrc = `const test = React.useState<Test | null>(null);`;
       const src = dedent`
       // @flow
       ${rootSrc}`;
       expect(await transform(src)).toBe(rootSrc);
-      expectMigrationReporterMethodNotCalled("untypedStateInitialization");
+      expectMigrationReporterMethodNotCalled('untypedStateInitialization');
     });
 
-    it("Does not create a warning for empty array", async () => {
+    it('Does not create a warning for empty array', async () => {
       const rootSrc = `const [array, setArray] = React.useState<TestArray[]>([]);`;
       const src = dedent`
       // @flow
       ${rootSrc}`;
       expect(await transform(src)).toBe(rootSrc);
-      expectMigrationReporterMethodNotCalled("untypedStateInitialization");
+      expectMigrationReporterMethodNotCalled('untypedStateInitialization');
     });
   });
 
-  describe("declaration files", () => {
-    it("ignores declaration files", async () => {
+  describe('declaration files', () => {
+    it('ignores declaration files', async () => {
       const src = `declare module '@fake/package' {};`;
       expect(await transform(src)).toBe(src);
-      expectMigrationReporterMethodNotCalled("foundDeclarationFile");
+      expectMigrationReporterMethodNotCalled('foundDeclarationFile');
     });
-    it("ignores declaration files with vars", async () => {
+    it('ignores declaration files with vars', async () => {
       const src = `declare export var Integrations: any;`;
       expect(await transform(src)).toBe(src);
-      expectMigrationReporterMethodNotCalled("foundDeclarationFile");
+      expectMigrationReporterMethodNotCalled('foundDeclarationFile');
     });
-    it("ignores declaration files with classes", async () => {
+    it('ignores declaration files with classes', async () => {
       const src = `declare class Hub {};`;
       expect(await transform(src)).toBe(src);
-      expectMigrationReporterMethodNotCalled("foundDeclarationFile");
+      expectMigrationReporterMethodNotCalled('foundDeclarationFile');
     });
   });
 
-  describe("variable declaration", () => {
-    it("should add a Record type annotation to objects declared as empty", async () => {
+  describe('variable declaration', () => {
+    it('should add a Record type annotation to objects declared as empty', async () => {
       const src = dedent`
       const a = {}
     `;
@@ -667,7 +679,7 @@ describe("transform declarations", () => {
       expect(await transform(src)).toBe(expected);
     });
 
-    it("should not replace existing types if they exist", async () => {
+    it('should not replace existing types if they exist', async () => {
       const src = dedent`
       const a: MyType = {}
     `;
@@ -677,7 +689,7 @@ describe("transform declarations", () => {
       expect(await transform(src)).toBe(expected);
     });
 
-    it("should not add a type for complex objects", async () => {
+    it('should not add a type for complex objects', async () => {
       const src = dedent`
       const a = { test: 'test' }
     `;
@@ -688,19 +700,19 @@ describe("transform declarations", () => {
     });
   });
 
-  describe("Array deconstruction types", () => {
-    it("should remove types from array deconstruction", async () => {
+  describe('Array deconstruction types', () => {
+    it('should remove types from array deconstruction', async () => {
       const src = `const [filter: Filter, sort: Sort] = useState(defaultFilter);`;
       const expected = dedent`const [filter, sort] = useState(defaultFilter);`;
       expect(await transform(src)).toBe(expected);
     });
 
-    it("should keep deconstruction types applied correctly", async () => {
+    it('should keep deconstruction types applied correctly', async () => {
       const src = `const [filter, sort]: [A, B] = useState(defaultFilter);`;
       expect(await transform(src)).toBe(src);
     });
 
-    it("should supply types from array deconstruction in function declarations", async () => {
+    it('should supply types from array deconstruction in function declarations', async () => {
       const src = dedent`
       function fn1([filter: Filter, sort: Sort]) {}
       class Cls {fn2([filter: Filter, sort: Sort]) {}}
@@ -720,7 +732,7 @@ describe("transform declarations", () => {
       expect(await transform(src)).toBe(expected);
     });
 
-    it("should supply any if one of the types is missing", async () => {
+    it('should supply any if one of the types is missing', async () => {
       const src = dedent`
       function fn1([filter, sort: Sort]) {}
       class Cls {fn2([filter, sort: Sort]) {}}
@@ -739,7 +751,7 @@ describe("transform declarations", () => {
       `;
       expect(await transform(src)).toBe(expected);
     });
-    it("when a comment is in a type param declaration, it should preserve the newline", async () => {
+    it('when a comment is in a type param declaration, it should preserve the newline', async () => {
       const src = dedent`
       const AThing: Array<
       // FlowFixMe
@@ -756,23 +768,23 @@ describe("transform declarations", () => {
     });
   });
 
-  describe("for opaque types", () => {
-    it("should transform a non-super type opaque type", async () => {
+  describe('for opaque types', () => {
+    it('should transform a non-super type opaque type', async () => {
       const src = `opaque type ID = string`;
       const expected = `type ID = string;`;
 
       expect(await transform(src)).toBe(expected);
     });
-    it("should transform an opaque super type as the normal type", async () => {
+    it('should transform an opaque super type as the normal type', async () => {
       const src = `opaque type ID: string = string`;
       const expected = `type ID = string;`;
       expect(await transform(src)).toBe(expected);
-      expectMigrationReporterMethodCalled("opaqueSuperType");
+      expectMigrationReporterMethodCalled('opaqueSuperType');
     });
   });
 
-  describe("handling empty array expressions", () => {
-    it("should annotate when flow returns an array", async () => {
+  describe('handling empty array expressions', () => {
+    it('should annotate when flow returns an array', async () => {
       const src = dedent`
       // @flow
       const arr = [];
@@ -787,7 +799,7 @@ describe("transform declarations", () => {
 
       mockFlowTypeAtPos.mockResolvedValue(
         t.genericTypeAnnotation(
-          t.identifier("Array"),
+          t.identifier('Array'),
           t.typeParameterInstantiation([t.numberTypeAnnotation()])
         )
       );
@@ -795,7 +807,7 @@ describe("transform declarations", () => {
       expect(await transform(src)).toBe(expected);
     });
 
-    it("should annotate when flow returns empty", async () => {
+    it('should annotate when flow returns empty', async () => {
       const src = dedent`
       // @flow
       const arr = [];
@@ -809,7 +821,7 @@ describe("transform declarations", () => {
       expect(await transform(src)).toBe(expected);
     });
 
-    it("should skip flow checking when disable flow is set", async () => {
+    it('should skip flow checking when disable flow is set', async () => {
       const src = dedent`
       // @flow
       const arr = []
@@ -818,12 +830,10 @@ describe("transform declarations", () => {
       const arr: unknown = [];
       `;
 
-      expect(
-        await transform(src, stateBuilder({ config: { disableFlow: true } }))
-      ).toBe(expected);
+      expect(await transform(src, stateBuilder({ config: { disableFlow: true } }))).toBe(expected);
     });
 
-    it("should handle when flow throws an exception", async () => {
+    it('should handle when flow throws an exception', async () => {
       const src = dedent`
       // @flow
       const arr = [];
@@ -832,7 +842,7 @@ describe("transform declarations", () => {
       const arr = [];
       `;
 
-      mockFlowTypeAtPos.mockRejectedValue(new Error("Flow failed"));
+      mockFlowTypeAtPos.mockRejectedValue(new Error('Flow failed'));
 
       expect(await transform(src)).toBe(expected);
     });
