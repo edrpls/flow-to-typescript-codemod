@@ -1,27 +1,23 @@
-import fs from "fs-extra";
-import cluster from "cluster";
-import chalk from "chalk";
-import {
-  FixCommandCliArgs,
-  ConvertCommandCliArgs,
-  SetupCommandCliArgs,
-} from "./cli/arguments";
-import { parseCommands } from "./cli/yargs";
-import { logger } from "./runner/logger";
-import { runPrimaryAsync } from "./runner/run-primary-async";
-import { runWorkerAsync } from "./runner/run-worker-async";
-import { runSetupCommand } from "./runner/run-setup-command";
-import { componentPropChecks } from "./fix/component-prop-checks";
-import { autoSuppressErrors } from "./fix/suppressions/auto-suppress";
-import { removeUnusedErrors } from "./fix/suppressions/remove-unused";
-import { generateReport } from "./fix/generate-report";
-import { autoImport } from "./fix/auto-import";
-import { fixTypeExports } from "./fix/fix-type-exports";
-import { getFixState } from "./fix/state";
+import fs from 'fs-extra';
+import cluster from 'cluster';
+import chalk from 'chalk';
+import { FixCommandCliArgs, ConvertCommandCliArgs, SetupCommandCliArgs } from './cli/arguments';
+import { parseCommands } from './cli/yargs';
+import { logger } from './runner/logger';
+import { runPrimaryAsync } from './runner/run-primary-async';
+import { runWorkerAsync } from './runner/run-worker-async';
+import { runSetupCommand } from './runner/run-setup-command';
+import { componentPropChecks } from './fix/component-prop-checks';
+import { autoSuppressErrors } from './fix/suppressions/auto-suppress';
+import { removeUnusedErrors } from './fix/suppressions/remove-unused';
+import { generateReport } from './fix/generate-report';
+import { autoImport } from './fix/auto-import';
+import { fixTypeExports } from './fix/fix-type-exports';
+import { getFixState } from './fix/state';
 
 if (cluster.isMaster) {
   logger.log();
-  logger.log(chalk.underline.bgBlue("Stripe Flow to TypeScript Codemod"));
+  logger.log(chalk.underline.bgBlue('Stripe Flow to TypeScript Codemod'));
   logger.log();
 }
 

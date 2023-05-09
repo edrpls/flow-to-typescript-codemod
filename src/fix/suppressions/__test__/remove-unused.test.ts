@@ -1,19 +1,16 @@
-import { removeUnusedErrors } from "../remove-unused";
-import { autoSuppressErrors } from "../auto-suppress";
-import {
-  createOutputRecorder,
-  getTestFixState,
-} from "../../../convert/utils/testing";
+import { removeUnusedErrors } from '../remove-unused';
+import { autoSuppressErrors } from '../auto-suppress';
+import { createOutputRecorder, getTestFixState } from '../../../convert/utils/testing';
 
-jest.mock("../../../runner/migration-reporter");
-jest.mock("../../../runner/logger");
+jest.mock('../../../runner/migration-reporter');
+jest.mock('../../../runner/logger');
 
-describe("removeUnused", () => {
+describe('removeUnused', () => {
   beforeEach(() => {
     jest.resetAllMocks();
   });
 
-  it("removes unused error suppressions", async () => {
+  it('removes unused error suppressions', async () => {
     const [results, recordTestResult] = createOutputRecorder();
 
     await removeUnusedErrors(
@@ -21,35 +18,35 @@ describe("removeUnused", () => {
         tsProps: false,
         autoSuppressErrors: false,
         generateReport: false,
-        jiraSlug: "",
+        jiraSlug: '',
         useIgnore: false,
         removeUnused: false,
-        config: "./src/fix/suppressions/__test__/tsconfig.json",
-        format: "stdout",
+        config: './src/fix/suppressions/__test__/tsconfig.json',
+        format: 'stdout',
         silent: false,
-        output: "",
+        output: '',
         autoImport: false,
         fixTypeExports: false,
       }),
       recordTestResult
     );
 
-    expect(results["test-input.ts"]).toMatchSnapshot();
+    expect(results['test-input.ts']).toMatchSnapshot();
   });
 
-  it("does not remove if run twice", async () => {
+  it('does not remove if run twice', async () => {
     const [results, recordTestResult] = createOutputRecorder();
     const state = getTestFixState({
       tsProps: false,
       autoSuppressErrors: false,
       generateReport: false,
-      jiraSlug: "",
+      jiraSlug: '',
       useIgnore: false,
       removeUnused: false,
-      config: "./src/fix/suppressions/__test__/tsconfig.json",
-      format: "stdout",
+      config: './src/fix/suppressions/__test__/tsconfig.json',
+      format: 'stdout',
       silent: false,
-      output: "",
+      output: '',
       autoImport: false,
       fixTypeExports: false,
     });
@@ -57,22 +54,22 @@ describe("removeUnused", () => {
     await removeUnusedErrors(state, recordTestResult);
     await removeUnusedErrors(state, recordTestResult);
 
-    expect(results["test-input.ts"]).toMatchSnapshot();
+    expect(results['test-input.ts']).toMatchSnapshot();
   });
 
-  it("works with autoSuppress", async () => {
+  it('works with autoSuppress', async () => {
     const [results, recordTestResult] = createOutputRecorder();
     const state = getTestFixState({
       tsProps: false,
       autoSuppressErrors: false,
       generateReport: false,
-      jiraSlug: "",
+      jiraSlug: '',
       useIgnore: false,
       removeUnused: false,
-      config: "./src/fix/suppressions/__test__/tsconfig.json",
-      format: "stdout",
+      config: './src/fix/suppressions/__test__/tsconfig.json',
+      format: 'stdout',
       silent: false,
-      output: "",
+      output: '',
       autoImport: false,
       fixTypeExports: false,
     });
@@ -80,6 +77,6 @@ describe("removeUnused", () => {
     await autoSuppressErrors(state, recordTestResult);
     await removeUnusedErrors(state, recordTestResult);
 
-    expect(results["test-input.ts"]).toMatchSnapshot();
+    expect(results['test-input.ts']).toMatchSnapshot();
   });
 });

@@ -1,8 +1,8 @@
-import traverse from "@babel/traverse";
-import { types } from "recast";
-import * as t from "@babel/types";
-import { TransformerInput } from "./transformer";
-import { addCommentsAtHeadOfNode } from "./utils/common";
+import traverse from '@babel/traverse';
+import { types } from 'recast';
+import * as t from '@babel/types';
+import { TransformerInput } from './transformer';
+import { addCommentsAtHeadOfNode } from './utils/common';
 
 /**
  * Inserts @ts-nocheck at the top of a converted no-Flow file
@@ -22,7 +22,7 @@ export function annotateNoFlow({ file }: TransformerInput) {
           leading: true,
           trailing: false,
           value: `@ts-nocheck`,
-          type: "CommentLine",
+          type: 'CommentLine',
         },
       ]);
     },

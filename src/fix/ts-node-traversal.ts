@@ -1,4 +1,4 @@
-import { Node, ts } from "ts-morph";
+import { Node, ts } from 'ts-morph';
 
 export function getParentUntil<S extends ts.Node>(
   node: Node<ts.Node> | undefined,

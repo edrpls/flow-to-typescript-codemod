@@ -1,16 +1,13 @@
-import path from "path";
-import chalk from "chalk";
-import { logger } from "../../logger";
+import path from 'path';
+import chalk from 'chalk';
+import { logger } from '../../logger';
 import {
   MigrationReportItem,
   MigrationReport,
   MigrationReportItemSeverity,
-} from "../migration-reporter";
+} from '../migration-reporter';
 
-const severityLoggerMap: Record<
-  MigrationReportItemSeverity,
-  (message?: string) => void
-> = {
+const severityLoggerMap: Record<MigrationReportItemSeverity, (message?: string) => void> = {
   [MigrationReportItemSeverity.info]: logger.info,
   [MigrationReportItemSeverity.warn]: logger.warn,
   [MigrationReportItemSeverity.error]: logger.error,
@@ -25,12 +22,12 @@ export async function stdOutFormatter(report: MigrationReport) {
     return accum;
   }, {} as Record<string, Array<MigrationReportItem>>);
 
-  logger.scope("typescriptify", "report");
+  logger.scope('typescriptify', 'report');
   logger.log();
-  logger.log(chalk.underline.bgBlue("Migration Report"));
+  logger.log(chalk.underline.bgBlue('Migration Report'));
 
   if (report.migrationReportItems.length === 0) {
-    logger.complete("No Items to Report");
+    logger.complete('No Items to Report');
     return;
   }
 

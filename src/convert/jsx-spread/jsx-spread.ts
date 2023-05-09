@@ -1,19 +1,16 @@
-import * as t from "@babel/types";
-import traverse, { VisitNodeFunction } from "@babel/traverse";
-import { TransformerInput } from "../transformer";
-import { componentsWithSpreads } from "./components-with-spreads";
-import { getLoc } from "../utils/common";
+import * as t from '@babel/types';
+import traverse, { VisitNodeFunction } from '@babel/traverse';
+import { TransformerInput } from '../transformer';
+import { componentsWithSpreads } from './components-with-spreads';
+import { getLoc } from '../utils/common';
 
-const classExtendsReactComponent = ({
-  superClass,
-  superTypeParameters,
-}: t.ClassDeclaration) => {
+const classExtendsReactComponent = ({ superClass, superTypeParameters }: t.ClassDeclaration) => {
   return (
     t.isMemberExpression(superClass) &&
     t.isIdentifier(superClass.object) &&
-    superClass.object.name === "React" &&
+    superClass.object.name === 'React' &&
     t.isIdentifier(superClass.property) &&
-    superClass.property.name === "Component" &&
+    superClass.property.name === 'Component' &&
     t.isTSTypeParameterInstantiation(superTypeParameters)
   );
 };
@@ -25,10 +22,10 @@ function getNewPropsType(propParam: t.TSType, componentSpreads: t.TSType[]) {
   const allPropTypes = t.tsIntersectionType(componentSpreads);
 
   const myKeyOfOperator = t.tsTypeOperator(propParam);
-  myKeyOfOperator.operator = "keyof";
+  myKeyOfOperator.operator = 'keyof';
 
   const omittedFromProps = t.tsTypeReference(
-    t.identifier("Omit"),
+    t.identifier('Omit'),
     t.tsTypeParameterInstantiation([allPropTypes, myKeyOfOperator])
   );
 
@@ -58,10 +55,7 @@ const functionalVisitor: VisitNodeFunction<
     return;
   }
 
-  const localComponentsWithSpreads = componentsWithSpreads(
-    path,
-    propsParam.name
-  );
+  const localComponentsWithSpreads = componentsWithSpreads(path, propsParam.name);
 
   if (localComponentsWithSpreads.length === 0) {
     return;
@@ -110,9 +104,7 @@ export function transformJsxSpread(transformerInput: TransformerInput) {
           path.traverse(
             {
               ClassMethod(path) {
-                this.componentsWithSpreads.push(
-                  ...componentsWithSpreads(path, "this.props")
-                );
+                this.componentsWithSpreads.push(...componentsWithSpreads(path, 'this.props'));
               },
             },
             componentState

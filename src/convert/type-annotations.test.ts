@@ -331,24 +331,20 @@ describe('transform type annotations', () => {
   });
 
   // Vtk
-  describe('Converts Vtk types', async () => {
-    Object.entries(VtkTypes).forEach(([flowType, tsType]) => {
-      it(`converts ${flowType} to ${tsType}`, async () => {
-        const src = `type Test = ${flowType};`;
-        const expected = `type Test = ${tsType};`;
-        expect(await transform(src)).toBe(expected);
-      });
+  Object.entries(VtkTypes).map(([flowType, tsType]) => {
+    it(`converts ${flowType} to ${tsType}`, async () => {
+      const src = `type Test = ${flowType};`;
+      const expected = `type Test = ${tsType};`;
+      expect(await transform(src)).toBe(expected);
     });
   });
 
   // Gql
-  describe('Converts Gql types', async () => {
-    Object.entries(GqlTypes).forEach(([flowType, tsType]) => {
-      it(`converts ${flowType} to ${tsType}`, async () => {
-        const src = `type Test = ${flowType};`;
-        const expected = `type Test = ${tsType};`;
-        expect(await transform(src)).toBe(expected);
-      });
+  Object.entries(GqlTypes).forEach(([flowType, tsType]) => {
+    it(`converts ${flowType} to ${tsType}`, async () => {
+      const src = `type Test = ${flowType};`;
+      const expected = `type Test = ${tsType};`;
+      expect(await transform(src)).toBe(expected);
     });
   });
 

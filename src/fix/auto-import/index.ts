@@ -1,9 +1,9 @@
-import { SourceFile } from "ts-morph";
-import MigrationReporter from "../../runner/migration-reporter";
-import { stdOutFormatter } from "../../runner/migration-reporter/formatters/std-out-formatter";
-import { jsonFormatter } from "../../runner/migration-reporter/formatters/json-formatter";
-import { logger } from "../../runner/logger";
-import { FixCommandState, getDiagnostics } from "../state";
+import { SourceFile } from 'ts-morph';
+import MigrationReporter from '../../runner/migration-reporter';
+import { stdOutFormatter } from '../../runner/migration-reporter/formatters/std-out-formatter';
+import { jsonFormatter } from '../../runner/migration-reporter/formatters/json-formatter';
+import { logger } from '../../runner/logger';
+import { FixCommandState, getDiagnostics } from '../state';
 
 /**
  * Use the TypeScript compiler's auto-import feature to try to fix missing imports.
@@ -26,9 +26,7 @@ export async function autoImport(
       return sourceFileMap.set(sourceFile.getFilePath(), sourceFile);
     }, new Map<string, SourceFile>());
 
-  logger.info(
-    `Attempting to fix import errors with auto-import. This may take a while..`
-  );
+  logger.info(`Attempting to fix import errors with auto-import. This may take a while..`);
   sourceFileMap.forEach((sourceFile) => {
     migrationReporter.autoImport(sourceFile.getFilePath());
     sourceFile.fixMissingImports();
@@ -45,10 +43,6 @@ export async function autoImport(
 
   logger.info(`Done auto-import.`);
 
-  const formatter =
-    argv.format === "json" ? jsonFormatter(argv.output) : stdOutFormatter;
-  await MigrationReporter.logReport(
-    migrationReporter.generateReport(),
-    formatter
-  );
+  const formatter = argv.format === 'json' ? jsonFormatter(argv.output) : stdOutFormatter;
+  await MigrationReporter.logReport(migrationReporter.generateReport(), formatter);
 }

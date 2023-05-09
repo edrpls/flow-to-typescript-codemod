@@ -1,8 +1,8 @@
-import dedent from "dedent";
-import { stateBuilder, watermarkTransform } from "./utils/testing";
+import dedent from 'dedent';
+import { stateBuilder, watermarkTransform } from './utils/testing';
 
-describe("watermarks", () => {
-  it("adds a watermark at the top", async () => {
+describe('watermarks', () => {
+  it('adds a watermark at the top', async () => {
     const src = ``;
     const expected = dedent`/** @typescriptify */
     /** 
@@ -13,7 +13,7 @@ describe("watermarks", () => {
     expect((await watermarkTransform(src)).trim()).toBe(expected.trim());
   });
 
-  it("Preserves existing comments", async () => {
+  it('Preserves existing comments', async () => {
     const src = dedent`// copyright stripe 2021
     const a = 1 + 1;`;
     const expected = dedent`/** @typescriptify */
@@ -29,16 +29,16 @@ describe("watermarks", () => {
     expect((await watermarkTransform(src)).trim()).toBe(expected.trim());
   });
 
-  it("Respects state", async () => {
+  it('Respects state', async () => {
     const src = ``;
     const expected = dedent`/** @test */
     /** Test message*/`;
 
     const state = stateBuilder({
       config: {
-        filePath: "./fake/test.js",
+        filePath: './fake/test.js',
         isTestFile: true,
-        watermark: "@test",
+        watermark: '@test',
         watermarkMessage: `Test message`,
       },
     });

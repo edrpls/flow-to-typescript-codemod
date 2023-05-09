@@ -1,4 +1,4 @@
-import { ConfigurableTypeProvider } from "../convert/utils/configurable-type-provider";
+import { ConfigurableTypeProvider } from '../convert/utils/configurable-type-provider';
 
 export type State = {
   // Set this flag if the codemod encounters JSX code

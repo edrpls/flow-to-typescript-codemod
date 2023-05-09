@@ -1,4 +1,4 @@
-import { SourceFile } from "ts-morph";
+import { SourceFile } from 'ts-morph';
 
 export function getImportNamed(sourceFile: SourceFile, name: string) {
   return sourceFile.getImportDeclaration((declaration) => {

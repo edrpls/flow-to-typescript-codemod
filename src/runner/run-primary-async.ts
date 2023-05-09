@@ -1,20 +1,16 @@
-import path from "path";
-import fs from "fs-extra";
-import os from "os";
-import cluster from "cluster";
-import simpleGit from "simple-git";
+import path from 'path';
+import fs from 'fs-extra';
+import os from 'os';
+import cluster from 'cluster';
+import simpleGit from 'simple-git';
 
-import { ConvertCommandCliArgs } from "../cli/arguments";
-import { logger, interactiveLogger } from "./logger";
-import {
-  findFlowFilesAsync,
-  FlowFileList,
-  FlowFileType,
-} from "./find-flow-files";
-import MigrationReporter, { MigrationReport } from "./migration-reporter";
-import { stdOutFormatter } from "./migration-reporter/formatters/std-out-formatter";
-import { jsonFormatter } from "./migration-reporter/formatters/json-formatter";
-import { csvFormatter } from "./migration-reporter/formatters/csv-formatter";
+import { ConvertCommandCliArgs } from '../cli/arguments';
+import { logger, interactiveLogger } from './logger';
+import { findFlowFilesAsync, FlowFileList, FlowFileType } from './find-flow-files';
+import MigrationReporter, { MigrationReport } from './migration-reporter';
+import { stdOutFormatter } from './migration-reporter/formatters/std-out-formatter';
+import { jsonFormatter } from './migration-reporter/formatters/json-formatter';
+import { csvFormatter } from './migration-reporter/formatters/csv-formatter';
 
 /**
  * Randomize the order of an array.
@@ -43,15 +39,10 @@ export async function runPrimaryAsync(options: ConvertCommandCliArgs) {
     const isDirectory = fs.lstatSync(p).isDirectory();
     if (isDirectory) {
       filePromises.push(
-        findFlowFilesAsync(
-          p,
-          options.ignore,
-          filePathReporter,
-          options.stripPathsForIgnore
-        )
+        findFlowFilesAsync(p, options.ignore, filePathReporter, options.stripPathsForIgnore)
       );
     } else {
-      logger.info("Path to convert is a file, only converting single file.");
+      logger.info('Path to convert is a file, only converting single file.');
       const filePromise: Promise<FlowFileList> = Promise.resolve([
         { filePath: p, fileType: FlowFileType.FLOW },
       ]);
@@ -71,10 +62,7 @@ export async function runPrimaryAsync(options: ConvertCommandCliArgs) {
   shuffle(flowFilePaths);
   const cpus = os.cpus().length;
   /** The size of a file batch that we send to a worker. */
-  const BATCH = Math.min(
-    Math.max(Math.trunc(flowFilePaths.length / cpus), 1),
-    50
-  );
+  const BATCH = Math.min(Math.max(Math.trunc(flowFilePaths.length / cpus), 1), 50);
   logger.note(`Selecting a batch size of ${BATCH}.`);
 
   // Generate our batches of files
@@ -85,13 +73,11 @@ export async function runPrimaryAsync(options: ConvertCommandCliArgs) {
   const totalBatches = batches.length;
 
   const workerCount = Math.min(cpus, batches.length);
-  logger.note(
-    `Spawning ${workerCount} workers to process ${flowFilePaths.length} files.`
-  );
+  logger.note(`Spawning ${workerCount} workers to process ${flowFilePaths.length} files.`);
 
   if (!options.write) {
     logger.info(
-      "Running in dry-mode! No TypeScript will be written to disk unless specified with --write."
+      'Running in dry-mode! No TypeScript will be written to disk unless specified with --write.'
     );
   }
 
@@ -114,9 +100,7 @@ export async function runPrimaryAsync(options: ConvertCommandCliArgs) {
   // Setup logging progress
   const updateProgress = () => {
     if (areWorkersCompleted()) {
-      interactiveLogger.complete(
-        `Finished processing batches - [${totalBatches}/${totalBatches}]`
-      );
+      interactiveLogger.complete(`Finished processing batches - [${totalBatches}/${totalBatches}]`);
       return;
     }
     interactiveLogger.pending(
@@ -135,14 +119,14 @@ export async function runPrimaryAsync(options: ConvertCommandCliArgs) {
     workers.push(worker);
     sendBatch(initialBatch);
 
-    worker.on("exit", () => {
+    worker.on('exit', () => {
       if (areWorkersCompleted()) {
         updateProgress();
         finish();
       }
     });
 
-    worker.on("message", (message) => {
+    worker.on('message', (message) => {
       if (timeoutId !== null) {
         clearTimeout(timeoutId);
         timeoutId = null;
@@ -151,19 +135,19 @@ export async function runPrimaryAsync(options: ConvertCommandCliArgs) {
       switch (message.type) {
         // Either send the worker a new batch or ask the worker to send us a report of
         // its activities.
-        case "next": {
+        case 'next': {
           const nextBatch = batches.pop();
           if (nextBatch) {
             sendBatch(nextBatch);
             updateProgress();
           } else {
-            worker.send({ type: "report" });
+            worker.send({ type: 'report' });
           }
           break;
         }
 
         // Once we get the worker’s final report, kill the worker.
-        case "report": {
+        case 'report': {
           reports.push(message.report);
           worker.kill();
           break;
@@ -172,7 +156,7 @@ export async function runPrimaryAsync(options: ConvertCommandCliArgs) {
     });
 
     function sendBatch(batch: FlowFileList) {
-      worker.send({ type: "batch", batch });
+      worker.send({ type: 'batch', batch });
 
       if (timeoutId !== null) {
         clearTimeout(timeoutId);
@@ -180,11 +164,7 @@ export async function runPrimaryAsync(options: ConvertCommandCliArgs) {
       }
 
       timeoutId = setTimeout(() => {
-        logger.warn(
-          `Worker #${
-            i + 1
-          } hasn’t responded in 2 minutes after sending the batch:`
-        );
+        logger.warn(`Worker #${i + 1} hasn’t responded in 2 minutes after sending the batch:`);
         for (const file of batch) {
           logger.warn(`• ${path.relative(process.cwd(), file.filePath)}`);
         }
@@ -196,14 +176,12 @@ export async function runPrimaryAsync(options: ConvertCommandCliArgs) {
   // console for debugging.
   async function finish() {
     if (options.delete) {
-      logger.info("Deleting all the Flow files.");
+      logger.info('Deleting all the Flow files.');
       const toRemoveCalls = [];
       for (const flowFilePath of flowFilePaths) {
         const wasSkipped =
-          (flowFilePath.fileType === FlowFileType.NO_FLOW &&
-            options.skipNoFlow) ||
-          (flowFilePath.fileType === FlowFileType.NO_ANNOTATION &&
-            !options.convertUnannotated);
+          (flowFilePath.fileType === FlowFileType.NO_FLOW && options.skipNoFlow) ||
+          (flowFilePath.fileType === FlowFileType.NO_ANNOTATION && !options.convertUnannotated);
 
         if (!wasSkipped) {
           toRemoveCalls.push(fs.remove(flowFilePath.filePath));
@@ -211,32 +189,30 @@ export async function runPrimaryAsync(options: ConvertCommandCliArgs) {
       }
       await Promise.all(toRemoveCalls);
     } else {
-      logger.info(
-        "Not modifying original source files. Run with -d to delete after conversion."
-      );
+      logger.info('Not modifying original source files. Run with -d to delete after conversion.');
     }
-    if (options.silent && options.format === "stdout") {
+    if (options.silent && options.format === 'stdout') {
       return;
     }
 
     logger.note(`Merging reports from ${workerCount} workers.`);
     const mergedReport = MigrationReporter.mergeReports(reports);
     let formatter = stdOutFormatter;
-    if (options.format === "json") {
+    if (options.format === 'json') {
       formatter = jsonFormatter(options.output);
-    } else if (options.format === "csv") {
+    } else if (options.format === 'csv') {
       formatter = csvFormatter(options.output);
     }
     await MigrationReporter.logReport(mergedReport, formatter);
 
-    logger.info("Moving files with git...");
+    logger.info('Moving files with git...');
     for (const { filePath, hasJsx } of mergedReport.migrationSuccessItems) {
       const target = filePath
-        .replace(/\.jsx$/, hasJsx ? ".tsx" : ".ts")
-        .replace(/\.js$/, hasJsx ? ".tsx" : ".ts");
+        .replace(/\.jsx$/, hasJsx ? '.tsx' : '.ts')
+        .replace(/\.js$/, hasJsx ? '.tsx' : '.ts');
       await _maybeMoveWithGit(filePath, target);
     }
-    logger.complete("Done!");
+    logger.complete('Done!');
 
     if (mergedReport.totals.error > 0) {
       logger.error(
@@ -246,19 +222,15 @@ export async function runPrimaryAsync(options: ConvertCommandCliArgs) {
     }
 
     if (options.write) {
-      logger.success(
-        `Converted ${mergedReport.lineCount} lines in ${flowFilePaths.length} files.`
-      );
+      logger.success(`Converted ${mergedReport.lineCount} lines in ${flowFilePaths.length} files.`);
     } else {
-      logger.success(
-        `Processed ${mergedReport.lineCount} lines in ${flowFilePaths.length} files.`
-      );
+      logger.success(`Processed ${mergedReport.lineCount} lines in ${flowFilePaths.length} files.`);
     }
   }
 }
 
 async function _maybeMoveWithGit(from: string, to: string) {
-  const repoDir = process.env.REPO_RELATIVE_PATH || ".";
+  const repoDir = process.env.REPO_RELATIVE_PATH || '.';
 
   const git = simpleGit({ baseDir: path.join(process.cwd(), repoDir) });
 
@@ -268,10 +240,9 @@ async function _maybeMoveWithGit(from: string, to: string) {
     const relativeTo = to.slice(prefix.length);
     await git.mv(relativeFrom, relativeTo);
   } catch (error) {
-    logger.warn(
-      `Failed to move from ${from} to ${to}, will fall back to simple rename`
-    );
-    logger.warn(error);
+    logger.warn(`Failed to move from ${from} to ${to}, will fall back to simple rename`);
+    // TODO: Uncomment this when ready to run from target project
+    // logger.warn(error);
     fs.renameSync(from, to);
   }
 }

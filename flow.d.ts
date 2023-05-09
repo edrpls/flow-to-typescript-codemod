@@ -29,19 +29,13 @@ export declare namespace Flow {
   // $Diff utility type
   // https://flow.org/en/docs/types/utilities/#toc-diff
   // https://github.com/piotrwitek/utility-types/blob/df2502ef504c4ba8bd9de81a45baef112b7921d0/src/utility-types.ts#L50
-  type Diff<T extends U, U extends object> = Pick<
-    T,
-    SetComplement<keyof T, keyof U>
-  >;
+  type Diff<T extends U, U extends object> = Pick<T, SetComplement<keyof T, keyof U>>;
 
-  type ComponentProps<T> = T extends
-    | React.ComponentType<infer P>
-    | React.Component<infer P>
+  type ComponentProps<T> = T extends React.ComponentType<infer P> | React.Component<infer P>
     ? JSX.LibraryManagedAttributes<T, P>
     : HasComponentProps<T>;
 
-  type ObjMap<
-    O extends Record<string, any>,
-    F extends (...args: any[]) => any
-  > = { [P in keyof O]: ReturnType<F> };
+  type ObjMap<O extends Record<string, any>, F extends (...args: any[]) => any> = {
+    [P in keyof O]: ReturnType<F>;
+  };
 }

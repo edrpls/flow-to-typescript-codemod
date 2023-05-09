@@ -1,22 +1,14 @@
-import traverse, { NodePath } from "@babel/traverse";
-import * as t from "@babel/types";
-import { types } from "recast";
-import { TransformerInput } from "./transformer";
+import traverse, { NodePath } from '@babel/traverse';
+import * as t from '@babel/types';
+import { types } from 'recast';
+import { TransformerInput } from './transformer';
 
-const flowComments = [
-  "@flow",
-  "$FlowFixMe",
-  "$FlowIssue",
-  "$FlowExpectedError",
-  "$FlowIgnore",
-];
+const flowComments = ['@flow', '$FlowFixMe', '$FlowIssue', '$FlowExpectedError', '$FlowIgnore'];
 
 /**
  * Scan through top level programs, or code blocks and remove Flow-specific comments
  */
-const removeComments = (
-  path: NodePath<t.Program> | NodePath<t.BlockStatement>
-) => {
+const removeComments = (path: NodePath<t.Program> | NodePath<t.BlockStatement>) => {
   if (path.node.body.length === 0) {
     return;
   }
@@ -28,14 +20,12 @@ const removeComments = (
 
     rootNode.comments =
       comments
-        ?.filter(
-          (comment) => !flowComments.some((c) => comment.value.includes(c))
-        )
+        ?.filter((comment) => !flowComments.some((c) => comment.value.includes(c)))
         .map((comment) => {
-          if (comment.value.includes("@noflow")) {
+          if (comment.value.includes('@noflow')) {
             return {
               ...comment,
-              value: comment.value.replace(/@noflow/, "@ts-nocheck"),
+              value: comment.value.replace(/@noflow/, '@ts-nocheck'),
             };
           }
 

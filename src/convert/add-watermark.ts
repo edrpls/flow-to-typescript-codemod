@@ -1,11 +1,8 @@
-import traverse from "@babel/traverse";
-import { types } from "recast";
-import * as t from "@babel/types";
-import { TransformerInput } from "./transformer";
-import {
-  addCommentsAtHeadOfNode,
-  addEmptyLineInProgramPath,
-} from "./utils/common";
+import traverse from '@babel/traverse';
+import { types } from 'recast';
+import * as t from '@babel/types';
+import { TransformerInput } from './transformer';
+import { addCommentsAtHeadOfNode, addEmptyLineInProgramPath } from './utils/common';
 
 /**
  * Adds a watermark at the top of a file
@@ -29,13 +26,13 @@ export function addWatermark({ state, file }: TransformerInput) {
           leading: true,
           trailing: false,
           value: `* ${state.config.watermark} `,
-          type: "CommentBlock",
+          type: 'CommentBlock',
         },
         {
           leading: true,
           trailing: false,
           value: `* ${state.config.watermarkMessage}`,
-          type: "CommentBlock",
+          type: 'CommentBlock',
         },
       ]);
     },

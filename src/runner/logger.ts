@@ -1,4 +1,4 @@
-import { Signale } from "signale";
+import { Signale } from 'signale';
 
 /**
  * Create a Signale logger, that is either normal or loading

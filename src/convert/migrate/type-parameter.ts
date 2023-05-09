@@ -1,9 +1,9 @@
-import * as t from "@babel/types";
-import MigrationReporter from "../../runner/migration-reporter";
-import { inheritLocAndComments } from "../utils/common";
-import { migrateType } from "./type";
-import { State } from "../../runner/state";
-import { MetaData } from "./metadata";
+import * as t from '@babel/types';
+import MigrationReporter from '../../runner/migration-reporter';
+import { inheritLocAndComments } from '../utils/common';
+import { migrateType } from './type';
+import { State } from '../../runner/state';
+import { MetaData } from './metadata';
 
 export function migrateTypeParameterDeclaration(
   reporter: MigrationReporter,
@@ -14,10 +14,7 @@ export function migrateTypeParameterDeclaration(
     // ReadOnlyMap<K, +V>
     // https://flow.org/en/docs/lang/variance/
     if (flowTypeParameter.variance !== null) {
-      reporter.typeParameterWithVariance(
-        state.config.filePath,
-        flowTypeParameter.loc!
-      );
+      reporter.typeParameterWithVariance(state.config.filePath, flowTypeParameter.loc!);
     }
     const tsTypeParameter = t.tsTypeParameter(
       flowTypeParameter.bound

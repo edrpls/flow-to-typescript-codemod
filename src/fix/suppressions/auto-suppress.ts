@@ -1,10 +1,10 @@
-import { Diagnostic, Project, SourceFile, ts } from "ts-morph";
-import { FixCommandState, getDiagnostics } from "../state";
-import { FixCommandCliArgs } from "../../cli/arguments";
-import { logger } from "../../runner/logger";
-import { isDiagnosticSuppressible } from "../insuppressible-errors";
-import { diagnosticToDescription } from "./diagnostic-to-description";
-import { CommentToMake, CommentType } from "./shared";
+import { Diagnostic, Project, SourceFile, ts } from 'ts-morph';
+import { FixCommandState, getDiagnostics } from '../state';
+import { FixCommandCliArgs } from '../../cli/arguments';
+import { logger } from '../../runner/logger';
+import { isDiagnosticSuppressible } from '../insuppressible-errors';
+import { diagnosticToDescription } from './diagnostic-to-description';
+import { CommentToMake, CommentType } from './shared';
 
 interface Metrics {
   suppressed: number;
@@ -14,7 +14,7 @@ function makeComment({
   commentType,
   jiraSlug,
   diagnostics,
-  annotation = "@ts-expect-error",
+  annotation = '@ts-expect-error',
 }: {
   commentType: CommentType;
   jiraSlug: string;
@@ -22,11 +22,11 @@ function makeComment({
   annotation?: string;
 }): string {
   // If jira slug was not specified, don't include anything
-  const fullJiraSlug = jiraSlug === "" ? "" : ` [${jiraSlug}]`;
+  const fullJiraSlug = jiraSlug === '' ? '' : ` [${jiraSlug}]`;
 
   const commentText = `${annotation}${fullJiraSlug} - ${diagnostics
     .map((diagnostic) => diagnosticToDescription(diagnostic))
-    .join(" | ")}`;
+    .join(' | ')}`;
 
   if (commentType === CommentType.Jsx) {
     return `{ /* ${commentText} */}\n`;
@@ -45,9 +45,7 @@ function addSuppressionsInFile(
   { jiraSlug, useIgnore }: FixCommandCliArgs
 ) {
   let addedLength = 0;
-  for (const { position, commentType, diagnostics } of Object.values(
-    positions
-  )) {
+  for (const { position, commentType, diagnostics } of Object.values(positions)) {
     const isInsuppressible = diagnostics.find((error) => {
       const isInsuppressible = !isDiagnosticSuppressible(error);
       if (isInsuppressible) {
@@ -63,7 +61,7 @@ function addSuppressionsInFile(
         commentType,
         diagnostics,
         jiraSlug,
-        annotation: useIgnore ? "@ts-ignore" : "@ts-expect-error",
+        annotation: useIgnore ? '@ts-ignore' : '@ts-expect-error',
       });
       const insertPos = position + addedLength;
       sourceFile.insertText(insertPos, comment);
@@ -80,11 +78,8 @@ export async function autoSuppressErrors(
   { argv, project }: FixCommandState,
   writeFile: FileWriter = defaultWriter
 ) {
-  const diagnosticsByFile: Map<
-    SourceFile,
-    Record<number, CommentToMake>
-  > = new Map();
-  logger.info("Suppressing errors..");
+  const diagnosticsByFile: Map<SourceFile, Record<number, CommentToMake>> = new Map();
+  logger.info('Suppressing errors..');
   const diagnostics = getDiagnostics(project);
 
   diagnostics.forEach((error) => {

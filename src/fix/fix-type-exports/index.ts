@@ -1,11 +1,11 @@
-import type { Node } from "ts-morph";
-import { SourceFile, ts, ExportDeclaration } from "ts-morph";
-import MigrationReporter from "../../runner/migration-reporter";
-import { getParentUntil } from "../ts-node-traversal";
-import { jsonFormatter } from "../../runner/migration-reporter/formatters/json-formatter";
-import { logger } from "../../runner/logger";
-import { stdOutFormatter } from "../../runner/migration-reporter/formatters/std-out-formatter";
-import { FixCommandState, getDiagnostics } from "../state";
+import type { Node } from 'ts-morph';
+import { SourceFile, ts, ExportDeclaration } from 'ts-morph';
+import MigrationReporter from '../../runner/migration-reporter';
+import { getParentUntil } from '../ts-node-traversal';
+import { jsonFormatter } from '../../runner/migration-reporter/formatters/json-formatter';
+import { logger } from '../../runner/logger';
+import { stdOutFormatter } from '../../runner/migration-reporter/formatters/std-out-formatter';
+import { FixCommandState, getDiagnostics } from '../state';
 
 const REEXPORTED_TYPE_ERROR = 1205; // See: https://www.typescriptlang.org/tsconfig#isolatedModules
 
@@ -43,10 +43,7 @@ function extractTypeOnlyExports(
 
 function fixTypeOnlyExports(sourceFile: SourceFile, identifiers: Node[]) {
   const identifiersByExport = identifiers.reduce((exportMap, node: Node) => {
-    const exportNode = getParentUntil(
-      node,
-      ts.isExportDeclaration
-    ) as ExportDeclaration;
+    const exportNode = getParentUntil(node, ts.isExportDeclaration) as ExportDeclaration;
     if (exportNode) {
       const identifiers = exportMap.get(exportNode) || [];
       exportMap.set(exportNode, [...identifiers, node]);
@@ -76,7 +73,7 @@ export async function fixTypeExports(
   { argv, migrationReporter, project }: FixCommandState,
   writeFile: FileWriter = defaultWriter
 ) {
-  logger.info("Checking TypeScript export types");
+  logger.info('Checking TypeScript export types');
   logger.warn(`[Experimental] This transformation is experimental.`);
 
   const initialDiagnostics = getDiagnostics(project);
@@ -87,33 +84,27 @@ export async function fixTypeExports(
 
   logger.info(`${diagnostics.length} type-export diagnostics received.`);
 
-  const invalidTypeExportIdentifiersByFile = diagnostics.reduce(
-    (sourceFileMap, error) => {
-      const sourceFile = error.getSourceFile();
-      const location = error.getStart();
-      if (!sourceFile || !location) {
-        return sourceFileMap;
-      }
-
-      const node = sourceFile.getDescendantAtPos(location);
-      if (node) {
-        const nodes = sourceFileMap.get(sourceFile) || [];
-        sourceFileMap.set(sourceFile, [...nodes, node]);
-      }
-
+  const invalidTypeExportIdentifiersByFile = diagnostics.reduce((sourceFileMap, error) => {
+    const sourceFile = error.getSourceFile();
+    const location = error.getStart();
+    if (!sourceFile || !location) {
       return sourceFileMap;
-    },
-    new Map<SourceFile, Node[]>()
-  );
+    }
+
+    const node = sourceFile.getDescendantAtPos(location);
+    if (node) {
+      const nodes = sourceFileMap.get(sourceFile) || [];
+      sourceFileMap.set(sourceFile, [...nodes, node]);
+    }
+
+    return sourceFileMap;
+  }, new Map<SourceFile, Node[]>());
 
   logger.info(`Fixing mismatched type exports.`);
 
   invalidTypeExportIdentifiersByFile.forEach((nodes, sourceFile) => {
     for (const node of nodes) {
-      migrationReporter.typeExports(
-        sourceFile.getFilePath(),
-        node.getStartLineNumber()
-      );
+      migrationReporter.typeExports(sourceFile.getFilePath(), node.getStartLineNumber());
     }
 
     fixTypeOnlyExports(sourceFile, nodes);
@@ -131,6 +122,6 @@ export async function fixTypeExports(
 
   await MigrationReporter.logReport(
     migrationReporter.generateReport(),
-    argv.format === "json" ? jsonFormatter(argv.output) : stdOutFormatter
+    argv.format === 'json' ? jsonFormatter(argv.output) : stdOutFormatter
   );
 }

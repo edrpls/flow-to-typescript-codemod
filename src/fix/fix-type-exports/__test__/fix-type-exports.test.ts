@@ -1,19 +1,19 @@
-import { fixTypeExports } from "..";
+import { fixTypeExports } from '..';
 import {
   expectMigrationReporterMethodCalled,
   createOutputRecorder,
   getTestFixState,
-} from "../../../convert/utils/testing";
+} from '../../../convert/utils/testing';
 
-jest.mock("../../../runner/migration-reporter");
-jest.mock("../../../runner/logger");
+jest.mock('../../../runner/migration-reporter');
+jest.mock('../../../runner/logger');
 
-describe("fixTypeExports", () => {
+describe('fixTypeExports', () => {
   beforeEach(() => {
     jest.resetAllMocks();
   });
 
-  it("fixes mismatched type imports and exports", async () => {
+  it('fixes mismatched type imports and exports', async () => {
     const [results, recordTestResult] = createOutputRecorder();
 
     await fixTypeExports(
@@ -21,13 +21,13 @@ describe("fixTypeExports", () => {
         tsProps: false,
         autoSuppressErrors: false,
         generateReport: false,
-        jiraSlug: "",
+        jiraSlug: '',
         useIgnore: false,
         removeUnused: false,
-        config: "./src/fix/fix-type-exports/__test__/tsconfig.json",
-        format: "stdout",
+        config: './src/fix/fix-type-exports/__test__/tsconfig.json',
+        format: 'stdout',
         silent: false,
-        output: "",
+        output: '',
         autoImport: false,
         fixTypeExports: false,
       }),
@@ -36,6 +36,6 @@ describe("fixTypeExports", () => {
 
     expectMigrationReporterMethodCalled(`typeExports`);
 
-    expect(results["test-input.ts"]).toMatchSnapshot();
+    expect(results['test-input.ts']).toMatchSnapshot();
   });
 });

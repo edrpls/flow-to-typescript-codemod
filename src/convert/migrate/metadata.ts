@@ -1,5 +1,5 @@
-import { NodePath } from "@babel/traverse";
-import t from "@babel/types";
+import { NodePath } from '@babel/traverse';
+import t from '@babel/types';
 
 export interface MetaData {
   returnType?: boolean;

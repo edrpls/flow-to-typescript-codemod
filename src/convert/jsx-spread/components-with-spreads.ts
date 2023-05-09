@@ -1,6 +1,6 @@
-import * as t from "@babel/types";
-import { NodePath } from "@babel/traverse";
-import { getComponentType } from "./get-component-type";
+import * as t from '@babel/types';
+import { NodePath } from '@babel/traverse';
+import { getComponentType } from './get-component-type';
 
 export function componentsWithSpreads(
   path: NodePath<t.Node>,
@@ -13,7 +13,7 @@ export function componentsWithSpreads(
   path.traverse(
     {
       JSXOpeningElement(openingElementPath) {
-        if (this.restName === "") {
+        if (this.restName === '') {
           return;
         }
 
@@ -38,10 +38,7 @@ export function componentsWithSpreads(
         openingElementPath.traverse(
           {
             JSXSpreadAttribute({ node }) {
-              if (
-                t.isIdentifier(node.argument) &&
-                node.argument.name === this.restName
-              ) {
+              if (t.isIdentifier(node.argument) && node.argument.name === this.restName) {
                 this.isSpread = true;
               }
             },
@@ -59,7 +56,7 @@ export function componentsWithSpreads(
           let updatedComponentProps;
           if (elementState.omittedAttributes.length > 0) {
             updatedComponentProps = t.tsTypeReference(
-              t.identifier("Omit"),
+              t.identifier('Omit'),
               t.tsTypeParameterInstantiation([
                 namePropsType,
                 t.tsUnionType(
@@ -96,20 +93,17 @@ export function componentsWithSpreads(
 
         let initName = null;
         if (
-          init?.type === "MemberExpression" &&
-          init.object.type === "ThisExpression" &&
-          init.property.type === "Identifier" &&
-          init.property.name === "props"
+          init?.type === 'MemberExpression' &&
+          init.object.type === 'ThisExpression' &&
+          init.property.type === 'Identifier' &&
+          init.property.name === 'props'
         ) {
-          initName = "this.props";
-        } else if (init?.type === "Identifier") {
+          initName = 'this.props';
+        } else if (init?.type === 'Identifier') {
           initName = init.name;
         }
 
-        if (
-          initName === this.propArgumentName &&
-          t.isIdentifier(restPattern.argument)
-        ) {
+        if (initName === this.propArgumentName && t.isIdentifier(restPattern.argument)) {
           this.restName = restPattern.argument.name;
         }
       },
@@ -118,7 +112,7 @@ export function componentsWithSpreads(
       componentsWithSpreads,
       restPatterns,
       propArgumentName,
-      restName: "",
+      restName: '',
       ignoredAttributes,
       ignoredNodes,
     }

@@ -1,7 +1,7 @@
-import { Project } from "ts-morph";
-import { FixCommandCliArgs } from "../cli/arguments";
-import { logger } from "../runner/logger";
-import MigrationReporter from "../runner/migration-reporter";
+import { Project } from 'ts-morph';
+import { FixCommandCliArgs } from '../cli/arguments';
+import { logger } from '../runner/logger';
+import MigrationReporter from '../runner/migration-reporter';
 
 export interface FixCommandState {
   argv: FixCommandCliArgs;
@@ -10,7 +10,7 @@ export interface FixCommandState {
 }
 
 export const getDiagnostics = (project: Project) => {
-  logger.info("Getting type errors..");
+  logger.info('Getting type errors..');
   const diagnostics = project.getPreEmitDiagnostics();
   logger.info(`${diagnostics.length} type errors received`);
   return diagnostics;
@@ -18,11 +18,11 @@ export const getDiagnostics = (project: Project) => {
 
 export const getFixState = (argv: FixCommandCliArgs): FixCommandState => {
   // Setup
-  logger.info("Fixing types..");
+  logger.info('Fixing types..');
 
   const migrationReporter = new MigrationReporter();
 
-  logger.info("Starting TypeScript..");
+  logger.info('Starting TypeScript..');
   const project = new Project({
     tsConfigFilePath: argv.config,
   });

@@ -1,9 +1,9 @@
-import * as t from "@babel/types";
-import { NodePath } from "@babel/traverse";
-import MigrationReporter from "../../runner/migration-reporter";
-import { State } from "../../runner/state";
-import { flowTypeAtPos } from "./type-at-pos";
-import { migrateType } from "../migrate/type";
+import * as t from '@babel/types';
+import { NodePath } from '@babel/traverse';
+import MigrationReporter from '../../runner/migration-reporter';
+import { State } from '../../runner/state';
+import { flowTypeAtPos } from './type-at-pos';
+import { migrateType } from '../migrate/type';
 
 /**
  * There are some cases where it's fine if variables or parameters don't have a type
@@ -15,29 +15,21 @@ import { migrateType } from "../migrate/type";
 function parentProvidesImplicitType(path: NodePath<t.Node>): boolean {
   const parent = path.parentPath;
   switch (parent?.node.type) {
-    case "VariableDeclarator":
-      return (
-        t.isIdentifier(parent.node.id) && parent.node.id.typeAnnotation != null
-      );
-    case "CallExpression":
-      return (
-        t.isIdentifier(parent.node.callee) &&
-        parent.node.callee.typeAnnotation != null
-      );
-    case "AssignmentExpression":
-      return (
-        t.isIdentifier(parent.node.left) &&
-        parent.node.left.typeAnnotation != null
-      );
-    case "TSAsExpression":
-    case "TypeCastExpression":
-    case "ObjectProperty":
-    case "JSXExpressionContainer":
+    case 'VariableDeclarator':
+      return t.isIdentifier(parent.node.id) && parent.node.id.typeAnnotation != null;
+    case 'CallExpression':
+      return t.isIdentifier(parent.node.callee) && parent.node.callee.typeAnnotation != null;
+    case 'AssignmentExpression':
+      return t.isIdentifier(parent.node.left) && parent.node.left.typeAnnotation != null;
+    case 'TSAsExpression':
+    case 'TypeCastExpression':
+    case 'ObjectProperty':
+    case 'JSXExpressionContainer':
       return true;
-    case "ClassProperty":
-    case "ClassPrivateProperty":
+    case 'ClassProperty':
+    case 'ClassPrivateProperty':
       return parent.node.typeAnnotation != null;
-    case "ArrowFunctionExpression":
+    case 'ArrowFunctionExpression':
       return parent.node.returnType != null;
 
     // Currently we don’t support type annotations in object properties
@@ -55,7 +47,7 @@ function parentProvidesImplicitType(path: NodePath<t.Node>): boolean {
 export function annotateParamsWithFlowTypeAtPos(
   reporter: MigrationReporter,
   state: State,
-  params: t.ClassMethod["params"],
+  params: t.ClassMethod['params'],
   path: NodePath,
   isInsideCreateReactClass?: boolean
 ): Promise<unknown> {
@@ -65,7 +57,7 @@ export function annotateParamsWithFlowTypeAtPos(
 
   if (state.config.disableFlow) {
     for (const param of params) {
-      if (param.type === "Identifier" && !param.typeAnnotation) {
+      if (param.type === 'Identifier' && !param.typeAnnotation) {
         param.typeAnnotation = t.tsTypeAnnotation(t.tsUnknownKeyword());
         reporter.disableFlowCheck(state.config.filePath, param.loc!);
       }
@@ -77,7 +69,7 @@ export function annotateParamsWithFlowTypeAtPos(
   const awaitPromises: Array<Promise<void>> = [];
 
   for (const param of params) {
-    if (param.type === "Identifier" && !param.typeAnnotation) {
+    if (param.type === 'Identifier' && !param.typeAnnotation) {
       awaitPromises.push(
         (async () => {
           // Get the type Flow is inferring for this unannotated function parameter.
@@ -89,7 +81,7 @@ export function annotateParamsWithFlowTypeAtPos(
           // means you can do anything with the type effectively making it any. So
           // treat it as such.
           const tsType =
-            flowType.type === "EmptyTypeAnnotation"
+            flowType.type === 'EmptyTypeAnnotation'
               ? t.tsAnyKeyword()
               : migrateType(reporter, state, flowType);
 

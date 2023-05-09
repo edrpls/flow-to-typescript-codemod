@@ -1,18 +1,16 @@
-import { Diagnostic, DiagnosticMessageChain } from "ts-morph";
+import { Diagnostic, DiagnosticMessageChain } from 'ts-morph';
 
 function isDiagnosticMessageChain(
   diagnostic: Diagnostic | DiagnosticMessageChain
 ): diagnostic is DiagnosticMessageChain {
-  return "getNext" in diagnostic;
+  return 'getNext' in diagnostic;
 }
 
 export const buildDiagnosticFilter = (targetedErrorMessage: string) =>
-  function diagnosticFilter(
-    diagnostic: Diagnostic | DiagnosticMessageChain
-  ): boolean {
+  function diagnosticFilter(diagnostic: Diagnostic | DiagnosticMessageChain): boolean {
     const messageText = diagnostic.getMessageText();
 
-    if (typeof messageText !== "string") {
+    if (typeof messageText !== 'string') {
       return diagnosticFilter(messageText);
     }
 

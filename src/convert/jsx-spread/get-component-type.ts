@@ -1,4 +1,4 @@
-import * as t from "@babel/types";
+import * as t from '@babel/types';
 
 /**
  * Convert HTML tag names to the TS type for it
@@ -7,23 +7,23 @@ import * as t from "@babel/types";
  */
 function translateHTMLComponent(tag: string) {
   if (tag.match(/h\d/)) {
-    return "HTMLHeadingElement";
+    return 'HTMLHeadingElement';
   }
 
-  if (tag === "fieldset") {
-    return "HTMLFieldSetElement";
+  if (tag === 'fieldset') {
+    return 'HTMLFieldSetElement';
   }
 
-  if (tag === "a") {
-    return "HTMLAnchorElement";
+  if (tag === 'a') {
+    return 'HTMLAnchorElement';
   }
 
-  if (tag === "td") {
-    return "HTMLTableCellElement";
+  if (tag === 'td') {
+    return 'HTMLTableCellElement';
   }
 
-  if (tag === "tr") {
-    return "HTMLTableRowElement";
+  if (tag === 'tr') {
+    return 'HTMLTableRowElement';
   }
 
   return `HTML${tag.charAt(0).toUpperCase()}${tag.slice(1)}Element`;
@@ -32,13 +32,11 @@ function translateHTMLComponent(tag: string) {
 export function getComponentType(targetTag: string) {
   if (targetTag.charAt(0) === targetTag.charAt(0).toLowerCase()) {
     const qualifiedTypeAnnotation = t.tsQualifiedName(
-      t.identifier("React"),
-      t.identifier("HTMLProps")
+      t.identifier('React'),
+      t.identifier('HTMLProps')
     );
 
-    const myTypeLiteral = t.tsTypeReference(
-      t.identifier(translateHTMLComponent(targetTag))
-    );
+    const myTypeLiteral = t.tsTypeReference(t.identifier(translateHTMLComponent(targetTag)));
 
     return t.tsTypeReference(
       qualifiedTypeAnnotation,
@@ -48,8 +46,8 @@ export function getComponentType(targetTag: string) {
 
   const typeOfComponentAnnotation = t.tsTypeQuery(t.identifier(targetTag));
   const qualifiedTypeAnnotation = t.tsQualifiedName(
-    t.identifier("Flow"),
-    t.identifier("ComponentProps")
+    t.identifier('Flow'),
+    t.identifier('ComponentProps')
   );
 
   return t.tsTypeReference(

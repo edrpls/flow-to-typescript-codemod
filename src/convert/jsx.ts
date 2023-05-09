@@ -1,6 +1,6 @@
-import traverse from "@babel/traverse";
-import { TransformerInput } from "./transformer";
-import { getLoc } from "./utils/common";
+import traverse from '@babel/traverse';
+import { TransformerInput } from './transformer';
+import { getLoc } from './utils/common';
 
 /**
  * Scan JSX nodes, and update text that will not work in TS
@@ -13,7 +13,7 @@ export function transformJSX({ file, reporter, state }: TransformerInput) {
     // https://www.typescriptlang.org/play?#code/JYWwDg9gTgLgBAJQKYEMDG8BmUIjgcilQ3wG4BYAKCrQgDsBneAFSQA94BeOAHgBNgANwB8AcSIoYSKHAAUwgIwAGFQEoeAegEia9JnFYcAzHG78hYiVJmyA3vmH4AvsrWbtwoA
     JSXText(path) {
       const rawValue = path.node.extra?.raw as string | undefined;
-      if (rawValue && rawValue.includes(">")) {
+      if (rawValue && rawValue.includes('>')) {
         path.node.value = path.node.value.replace(/>/g, "{'>'}");
         reporter.unescapedGreaterThan(state.config.filePath, getLoc(path.node));
       }

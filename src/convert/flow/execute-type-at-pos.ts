@@ -1,5 +1,5 @@
-import childProcess from "child_process";
-import * as t from "@babel/types";
+import childProcess from 'child_process';
+import * as t from '@babel/types';
 
 /**
  * Actually executes `flow type-at-pos`. This will be called behind a throttle.

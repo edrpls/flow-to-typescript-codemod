@@ -1,52 +1,52 @@
-import * as t from "@babel/types";
-import chalk from "chalk";
-import { MigrationReportFormatter } from "./formatters/types";
+import * as t from '@babel/types';
+import chalk from 'chalk';
+import { MigrationReportFormatter } from './formatters/types';
 
 export enum MigrationReportItemSeverity {
-  info = "info",
-  warn = "warn",
-  error = "error",
+  info = 'info',
+  warn = 'warn',
+  error = 'error',
 }
 
 enum MigrationReportItemType {
-  typeParameterWithVariance = "typeParameterWithVariance",
-  objectPropertyWithInternalName = "objectPropertyWithInternalName",
-  objectPropertyWithMinusVariance = "objectPropertyWithMinusVariance",
-  unsupportedTypeCast = "unsupportedTypeCast",
-  usedExistentialAnyUtility = "usedExistentialAnyUtility",
-  usedFlowAnyObject = "usedFlowAnyObject",
-  usedFlowAnyFunction = "usedFlowAnyFunction",
-  usedFlowSubtype = "usedFlowSubtype",
-  error = "error",
-  unknownFlowType = "unknownFlowType",
-  unescapedGreaterThan = "unescapedGreaterThan",
-  anyFlowType = "anyFlowType",
-  complexFlowType = "complexFlowType",
-  importWithExtension = "importWithExtension",
-  nonLiteralFlowType = "nonLiteralFlowType",
-  untypedStateInitialization = "untypedStateInitialization",
-  flowFailToParse = "flowFailToParse",
-  foundNonFlowFile = "foundNonFlowFile",
-  foundDeclarationFile = "foundDeclarationFile",
-  usedJSXSpread = "usedJSXSpread",
-  unsupportedComponentProp = "unsupportedComponentProp",
-  maybeNeedTypes = "maybeNeedTypes",
-  usedWindowAsAnyType = "usedWindowAsAnyType",
-  asyncFunctionReturnType = "asyncFunctionReturnType",
-  requiredPropInOptionalAssignment = "requiredPropInOptionalAssignment",
-  invalidAppProp = "invalidAppProp",
-  invalidLibraryProp = "invalidLibraryProp",
-  invalidHtmlProp = "invalidHtmlProp",
-  invalidArrayPatternType = "invalidArrayPatternType",
-  opaqueSuperType = "opaqueSuperType",
-  usedObjMap = "usedObjMap",
-  foundNoFlowAnnotation = "foundNoFlowAnnotation",
-  untypedReduce = "untypedReduce",
-  unhandledFlowInputNode = "unhandledFlowInputNode",
-  autoImport = "autoImport",
-  typeExports = "typeExports",
-  migrateSnapFile = "migrateSnapFile",
-  disableFlowCheck = "disableFlowCheck",
+  typeParameterWithVariance = 'typeParameterWithVariance',
+  objectPropertyWithInternalName = 'objectPropertyWithInternalName',
+  objectPropertyWithMinusVariance = 'objectPropertyWithMinusVariance',
+  unsupportedTypeCast = 'unsupportedTypeCast',
+  usedExistentialAnyUtility = 'usedExistentialAnyUtility',
+  usedFlowAnyObject = 'usedFlowAnyObject',
+  usedFlowAnyFunction = 'usedFlowAnyFunction',
+  usedFlowSubtype = 'usedFlowSubtype',
+  error = 'error',
+  unknownFlowType = 'unknownFlowType',
+  unescapedGreaterThan = 'unescapedGreaterThan',
+  anyFlowType = 'anyFlowType',
+  complexFlowType = 'complexFlowType',
+  importWithExtension = 'importWithExtension',
+  nonLiteralFlowType = 'nonLiteralFlowType',
+  untypedStateInitialization = 'untypedStateInitialization',
+  flowFailToParse = 'flowFailToParse',
+  foundNonFlowFile = 'foundNonFlowFile',
+  foundDeclarationFile = 'foundDeclarationFile',
+  usedJSXSpread = 'usedJSXSpread',
+  unsupportedComponentProp = 'unsupportedComponentProp',
+  maybeNeedTypes = 'maybeNeedTypes',
+  usedWindowAsAnyType = 'usedWindowAsAnyType',
+  asyncFunctionReturnType = 'asyncFunctionReturnType',
+  requiredPropInOptionalAssignment = 'requiredPropInOptionalAssignment',
+  invalidAppProp = 'invalidAppProp',
+  invalidLibraryProp = 'invalidLibraryProp',
+  invalidHtmlProp = 'invalidHtmlProp',
+  invalidArrayPatternType = 'invalidArrayPatternType',
+  opaqueSuperType = 'opaqueSuperType',
+  usedObjMap = 'usedObjMap',
+  foundNoFlowAnnotation = 'foundNoFlowAnnotation',
+  untypedReduce = 'untypedReduce',
+  unhandledFlowInputNode = 'unhandledFlowInputNode',
+  autoImport = 'autoImport',
+  typeExports = 'typeExports',
+  migrateSnapFile = 'migrateSnapFile',
+  disableFlowCheck = 'disableFlowCheck',
 }
 
 /**
@@ -102,10 +102,7 @@ class MigrationReporter {
     };
   }
 
-  static async logReport(
-    report: MigrationReport,
-    ...formatters: MigrationReportFormatter[]
-  ) {
+  static async logReport(report: MigrationReport, ...formatters: MigrationReportFormatter[]) {
     for (const formatter of formatters) {
       // eslint-disable-next-line no-await-in-loop
       await formatter(report);
@@ -152,7 +149,7 @@ class MigrationReporter {
       MigrationReportItemSeverity.info,
       filePath,
       location,
-      "Encountered a parameter to a type with variance (Type<+V>). This type expansion has no TypeScript equivalent and will be dropped."
+      'Encountered a parameter to a type with variance (Type<+V>). This type expansion has no TypeScript equivalent and will be dropped.'
     );
   }
 
@@ -162,20 +159,17 @@ class MigrationReporter {
       MigrationReportItemSeverity.warn,
       filePath,
       location,
-      "Encountered an object property using the Flow internal naming format ({ $Key: string }). This pattern is not supported in TypeScript and should be updated."
+      'Encountered an object property using the Flow internal naming format ({ $Key: string }). This pattern is not supported in TypeScript and should be updated.'
     );
   }
 
-  objectPropertyWithMinusVariance(
-    filePath: string,
-    location: t.SourceLocation
-  ) {
+  objectPropertyWithMinusVariance(filePath: string, location: t.SourceLocation) {
     this.log(
       MigrationReportItemType.objectPropertyWithMinusVariance,
       MigrationReportItemSeverity.warn,
       filePath,
       location,
-      "Encountered an object property using Flow type variance ({ key: -string }) that cannot be cleanly converted."
+      'Encountered an object property using Flow type variance ({ key: -string }) that cannot be cleanly converted.'
     );
   }
 
@@ -186,7 +180,7 @@ class MigrationReporter {
       MigrationReportItemSeverity.info,
       filePath,
       location,
-      "Encountered an unsupported type cast"
+      'Encountered an unsupported type cast'
     );
   }
 
@@ -196,7 +190,7 @@ class MigrationReporter {
       MigrationReportItemSeverity.info,
       filePath,
       location,
-      "The existential type (*) in Flow is unsound and typechecks as `any`. This will become an `any` in TypeScript unless given a more specific type."
+      'The existential type (*) in Flow is unsound and typechecks as `any`. This will become an `any` in TypeScript unless given a more specific type.'
     );
   }
 
@@ -206,7 +200,7 @@ class MigrationReporter {
       MigrationReportItemSeverity.info,
       filePath,
       location,
-      "The Object type in Flow is deprecated and typechecks as `any`. This will become an `any` in TypeScript unless given a more specific type."
+      'The Object type in Flow is deprecated and typechecks as `any`. This will become an `any` in TypeScript unless given a more specific type.'
     );
   }
 
@@ -216,7 +210,7 @@ class MigrationReporter {
       MigrationReportItemSeverity.info,
       filePath,
       location,
-      "The Function type in Flow is deprecated and typechecks as `any`. This will become an `any` in TypeScript unless given a more specific type."
+      'The Function type in Flow is deprecated and typechecks as `any`. This will become an `any` in TypeScript unless given a more specific type.'
     );
   }
 
@@ -226,14 +220,11 @@ class MigrationReporter {
       MigrationReportItemSeverity.info,
       filePath,
       location,
-      "The $Subtype and $Supertype utilities in Flow are deprecated and typecheck as `any`. This will become an `any` in TypeScript unless given a more specific type."
+      'The $Subtype and $Supertype utilities in Flow are deprecated and typecheck as `any`. This will become an `any` in TypeScript unless given a more specific type.'
     );
   }
 
-  usedJSXSpread(
-    filePath: string,
-    location: t.SourceLocation | null | undefined
-  ) {
+  usedJSXSpread(filePath: string, location: t.SourceLocation | null | undefined) {
     this.log(
       MigrationReportItemType.usedJSXSpread,
       MigrationReportItemSeverity.info,
@@ -280,7 +271,7 @@ class MigrationReporter {
       MigrationReportItemSeverity.info,
       filePath,
       location,
-      "Flow reported an unknown type as a parameter for a function. The codemod will leave this parameter as an implicitly typed parameter, but it may produce an error in TypeScript."
+      'Flow reported an unknown type as a parameter for a function. The codemod will leave this parameter as an implicitly typed parameter, but it may produce an error in TypeScript.'
     );
   }
 
@@ -290,7 +281,7 @@ class MigrationReporter {
       MigrationReportItemSeverity.info,
       filePath,
       location,
-      "Flow reported an implicit any type as a parameter for a function. The codemod will leave this parameter as an implicitly typed parameter, but it may produce an error in TypeScript."
+      'Flow reported an implicit any type as a parameter for a function. The codemod will leave this parameter as an implicitly typed parameter, but it may produce an error in TypeScript.'
     );
   }
 
@@ -306,11 +297,7 @@ class MigrationReporter {
     );
   }
 
-  importWithExtension(
-    filePath: string,
-    location: t.SourceLocation,
-    source: string
-  ) {
+  importWithExtension(filePath: string, location: t.SourceLocation, source: string) {
     this.log(
       MigrationReportItemType.importWithExtension,
       MigrationReportItemSeverity.warn,
@@ -358,7 +345,7 @@ class MigrationReporter {
       MigrationReportItemSeverity.warn,
       filePath,
       { start: { column: 0, line: 0 }, end: { column: 0, line: 0 } },
-      "A file annotated `@noflow` was found. The codemod will replace @noflow with @ts-nocheck, and change the extension to ts. Certain config files or scripts may not run as ts files. Ignore them with --ignore, or run the codemod with --skipNoFlow."
+      'A file annotated `@noflow` was found. The codemod will replace @noflow with @ts-nocheck, and change the extension to ts. Certain config files or scripts may not run as ts files. Ignore them with --ignore, or run the codemod with --skipNoFlow.'
     );
   }
 
@@ -368,7 +355,7 @@ class MigrationReporter {
       MigrationReportItemSeverity.warn,
       filePath,
       { start: { column: 0, line: 0 }, end: { column: 0, line: 0 } },
-      "The codemod skipped this file because it was not annotated with `@flow`."
+      'The codemod skipped this file because it was not annotated with `@flow`.'
     );
   }
 
@@ -378,7 +365,7 @@ class MigrationReporter {
       MigrationReportItemSeverity.warn,
       filePath,
       { start: { column: 0, line: 0 }, end: { column: 0, line: 0 } },
-      "The codemod skipped this file because it contains Flow type declarations. Declarations are ignored since they often have issues parsing or conflict with TS declarations."
+      'The codemod skipped this file because it contains Flow type declarations. Declarations are ignored since they often have issues parsing or conflict with TS declarations.'
     );
   }
 
@@ -396,7 +383,7 @@ class MigrationReporter {
     this.log(
       MigrationReportItemType.maybeNeedTypes,
       MigrationReportItemSeverity.info,
-      "",
+      '',
       { start: { column: 0, line: 0 }, end: { column: 0, line: 0 } },
       `You may need to add additional type defintions as part of this conversion. Try installing them by running:\`yarn add --dev ${types}\`.`
     );
@@ -412,11 +399,7 @@ class MigrationReporter {
     );
   }
 
-  asyncFunctionReturnType(
-    filePath: string,
-    location: t.SourceLocation,
-    idName: string
-  ) {
+  asyncFunctionReturnType(filePath: string, location: t.SourceLocation, idName: string) {
     this.log(
       MigrationReportItemType.asyncFunctionReturnType,
       MigrationReportItemSeverity.info,
@@ -426,10 +409,7 @@ class MigrationReporter {
     );
   }
 
-  requiredPropInOptionalAssignment(
-    filePath: string,
-    location: t.SourceLocation
-  ) {
+  requiredPropInOptionalAssignment(filePath: string, location: t.SourceLocation) {
     this.log(
       MigrationReportItemType.requiredPropInOptionalAssignment,
       MigrationReportItemSeverity.warn,
@@ -471,12 +451,7 @@ class MigrationReporter {
     );
   }
 
-  invalidHTMLProp(
-    filePath: string,
-    line: number,
-    tagName: string,
-    propertyName: string
-  ) {
+  invalidHTMLProp(filePath: string, line: number, tagName: string, propertyName: string) {
     this.log(
       MigrationReportItemType.invalidHtmlProp,
       MigrationReportItemSeverity.warn,
@@ -523,7 +498,7 @@ class MigrationReporter {
       MigrationReportItemSeverity.info,
       filePath,
       location,
-      "Flow will try to infer the type of the accumulator and the return type of the reducer function. This may cause type errors in TypeScript."
+      'Flow will try to infer the type of the accumulator and the return type of the reducer function. This may cause type errors in TypeScript.'
     );
   }
 
@@ -568,15 +543,11 @@ class MigrationReporter {
       MigrationReportItemSeverity.info,
       filePath,
       location,
-      "Encountered a place where Flow would have been called to get inferred type, but Flow is disabled. Replacing with `unknown`"
+      'Encountered a place where Flow would have been called to get inferred type, but Flow is disabled. Replacing with `unknown`'
     );
   }
 
-  migrateSnapFile(
-    filePath: string,
-    originalSnapPath: string,
-    newSnapPath: string
-  ) {
+  migrateSnapFile(filePath: string, originalSnapPath: string, newSnapPath: string) {
     this.log(
       MigrationReportItemType.migrateSnapFile,
       MigrationReportItemSeverity.info,

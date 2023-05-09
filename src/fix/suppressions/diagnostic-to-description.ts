@@ -1,4 +1,4 @@
-import { Diagnostic, DiagnosticMessageChain } from "ts-morph";
+import { Diagnostic, DiagnosticMessageChain } from 'ts-morph';
 
 /**
  * Detect chains of errors, vs a single error
@@ -6,7 +6,7 @@ import { Diagnostic, DiagnosticMessageChain } from "ts-morph";
 function isDiagnosticMessageChain(
   message: string | DiagnosticMessageChain
 ): message is DiagnosticMessageChain {
-  return typeof message !== "string";
+  return typeof message !== 'string';
 }
 
 /**

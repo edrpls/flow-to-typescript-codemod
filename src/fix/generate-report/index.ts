@@ -1,9 +1,9 @@
-import * as fs from "fs";
-import { stringify } from "csv-stringify/sync";
-import { relative } from "path";
-import { logger } from "../../runner/logger";
-import { isDiagnosticSuppressible } from "../insuppressible-errors";
-import { FixCommandState, getDiagnostics } from "../state";
+import * as fs from 'fs';
+import { stringify } from 'csv-stringify/sync';
+import { relative } from 'path';
+import { logger } from '../../runner/logger';
+import { isDiagnosticSuppressible } from '../insuppressible-errors';
+import { FixCommandState, getDiagnostics } from '../state';
 
 export type ReportRow = [
   code: string,
@@ -30,10 +30,7 @@ export const compare = (first: ReportRow, second: ReportRow) => {
 };
 
 export function generateReport({ argv, project }: FixCommandState) {
-  const outputFile = relative(
-    process.cwd(),
-    argv.output || `migration-report.csv`
-  );
+  const outputFile = relative(process.cwd(), argv.output || `migration-report.csv`);
   logger.info(`Generating error report to ${outputFile}`);
   const table: Array<ReportRow> = [];
 
@@ -47,14 +44,12 @@ export function generateReport({ argv, project }: FixCommandState) {
       return;
     }
     // Get the source code for the line with the error
-    const errorSource = sourceFile.getFullText().split(`\n`)[
-      errorLineNumber - 1
-    ];
+    const errorSource = sourceFile.getFullText().split(`\n`)[errorLineNumber - 1];
     const filePath = sourceFile.compilerNode.fileName;
     const pathText = `${relative(process.cwd(), filePath)}:${errorLineNumber}`;
 
     const messageNode = error.getMessageText();
-    if (typeof messageNode === "string") {
+    if (typeof messageNode === 'string') {
       table.push([
         error.getCode().toString(),
         messageNode,
@@ -75,13 +70,7 @@ export function generateReport({ argv, project }: FixCommandState) {
   });
 
   const report = table.sort(compare);
-  report.unshift([
-    "Error Code",
-    "Message",
-    "Source",
-    "File Path",
-    "Suppressible",
-  ]);
+  report.unshift(['Error Code', 'Message', 'Source', 'File Path', 'Suppressible']);
 
   return fs.promises.writeFile(outputFile, stringify(report));
 }

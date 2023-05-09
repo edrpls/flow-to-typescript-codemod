@@ -1,8 +1,8 @@
-import { Diagnostic } from "ts-morph";
+import { Diagnostic } from 'ts-morph';
 
 export enum CommentType {
-  Standard = "Standard",
-  Jsx = "Jsx",
+  Standard = 'Standard',
+  Jsx = 'Jsx',
 }
 
 export interface CommentToMake {

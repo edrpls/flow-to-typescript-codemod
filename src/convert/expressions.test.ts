@@ -1,61 +1,57 @@
-import dedent from "dedent";
-import { JEST_MOCK_METHODS } from "./utils/common";
-import {
-  transform,
-  expectMigrationReporterMethodCalled,
-  stateBuilder,
-} from "./utils/testing";
+import dedent from 'dedent';
+import { JEST_MOCK_METHODS } from './utils/common';
+import { transform, expectMigrationReporterMethodCalled, stateBuilder } from './utils/testing';
 
-jest.mock("../runner/migration-reporter/migration-reporter.ts");
+jest.mock('../runner/migration-reporter/migration-reporter.ts');
 
-describe("transform expressions", () => {
-  it("converts basic typecast", async () => {
+describe('transform expressions', () => {
+  it('converts basic typecast', async () => {
     const src = `(x: boolean);`;
     const expected = `(x as boolean);`;
     expect(await transform(src)).toBe(expected);
   });
 
-  it("typecasts nested cast any", async () => {
+  it('typecasts nested cast any', async () => {
     const src = `((x: any): T);`;
     const expected = `(x as T);`;
     expect(await transform(src)).toBe(expected);
   });
 
-  it("typecasts nested cast object", async () => {
+  it('typecasts nested cast object', async () => {
     const src = `((x: Object): T);`;
     const expected = dedent`
     (x as any as T);`;
     expect(await transform(src)).toBe(expected);
-    expectMigrationReporterMethodCalled("usedFlowAnyObject");
+    expectMigrationReporterMethodCalled('usedFlowAnyObject');
   });
 
-  it("typecasts nested cast function", async () => {
+  it('typecasts nested cast function', async () => {
     const src = `((x: Function): T);`;
     const expected = dedent`
     (x as any as T);`;
     expect(await transform(src)).toBe(expected);
-    expectMigrationReporterMethodCalled("usedFlowAnyFunction");
+    expectMigrationReporterMethodCalled('usedFlowAnyFunction');
   });
 
-  it("typecasts string constant", async () => {
+  it('typecasts string constant', async () => {
     const src = `('foo': 'foo');`;
     const expected = `('foo' as const);`;
     expect(await transform(src)).toBe(expected);
   });
 
-  it("typecasts number constant", async () => {
+  it('typecasts number constant', async () => {
     const src = `(42: 42);`;
     const expected = `(42 as const);`;
     expect(await transform(src)).toBe(expected);
   });
 
   // Arrow Function Type Parameters
-  it("does not modify non-tsx arrow function parameters", async () => {
+  it('does not modify non-tsx arrow function parameters', async () => {
     const src = `const f = <T>(arg: T) => {arg};`;
     expect(await transform(src)).toBe(src);
   });
 
-  it("adds extends to ambiguous type parameters that could be JSX", async () => {
+  it('adds extends to ambiguous type parameters that could be JSX', async () => {
     const src = dedent`
     const f = <T>(arg: T) => {arg};
     const Component = <div />;
@@ -67,7 +63,7 @@ describe("transform expressions", () => {
     expect(await transform(src)).toBe(expected);
   });
 
-  it("adds extends to ambiguous type params when were forcing TSX parsing", async () => {
+  it('adds extends to ambiguous type params when were forcing TSX parsing', async () => {
     const src = dedent`
     const test = <T>(value: T): TestType<T> => ({
       foo: 'bar'
@@ -77,23 +73,19 @@ describe("transform expressions", () => {
     const test = <T extends unknown>(value: T): TestType<T> => ({
       foo: 'bar'
     });`;
-    expect(
-      await transform(src, stateBuilder({ config: { forceTSX: true } }))
-    ).toBe(expected);
+    expect(await transform(src, stateBuilder({ config: { forceTSX: true } }))).toBe(expected);
   });
 
-  it("does not add extends to ambiguous type params when no JSX present and not forcing TSX", async () => {
+  it('does not add extends to ambiguous type params when no JSX present and not forcing TSX', async () => {
     const src = dedent`
     const test = <T>(value: T): TestType<T> => ({
       foo: 'bar'
     });
     `;
-    expect(
-      await transform(src, stateBuilder({ config: { forceTSX: false } }))
-    ).toBe(src);
+    expect(await transform(src, stateBuilder({ config: { forceTSX: false } }))).toBe(src);
   });
 
-  it("adds extends to multiple ambiguous type parameters that could be JSX", async () => {
+  it('adds extends to multiple ambiguous type parameters that could be JSX', async () => {
     const src = dedent`
     const f = <T, T2>(arg: T, arg2: T2) => {arg, arg2};
     const Component = <div />;
@@ -105,7 +97,7 @@ describe("transform expressions", () => {
     expect(await transform(src)).toBe(expected);
   });
 
-  it("does not add extends if the type parameter already extends and it could be JSX", async () => {
+  it('does not add extends if the type parameter already extends and it could be JSX', async () => {
     const src = dedent`
     const f = <T: string, T2>(arg: T, arg2: T2) => {arg, arg2};
     const Component = <div />;
@@ -117,8 +109,8 @@ describe("transform expressions", () => {
     expect(await transform(src)).toBe(expected);
   });
 
-  describe("new expressions with exact object types", () => {
-    it("should remove the exact object types from type annotations", async () => {
+  describe('new expressions with exact object types', () => {
+    it('should remove the exact object types from type annotations', async () => {
       const src = dedent`
       // @flow
       const a: Array<{|
@@ -131,7 +123,7 @@ describe("transform expressions", () => {
       expect(await transform(src)).toBe(expected);
     });
 
-    it("should remove the exact object types from type arguments", async () => {
+    it('should remove the exact object types from type arguments', async () => {
       const src = dedent`
       // @flow
       const test = () => {
@@ -146,7 +138,7 @@ describe("transform expressions", () => {
       expect(await transform(src)).toBe(expected);
     });
 
-    it("should not change if there are no exact bars", async () => {
+    it('should not change if there are no exact bars', async () => {
       const expected = dedent`
       const a: Array<{
         foo: 'bar'
@@ -154,7 +146,7 @@ describe("transform expressions", () => {
       expect(await transform(expected)).toBe(expected);
     });
 
-    it("should remove the exact object types from constructed objects", async () => {
+    it('should remove the exact object types from constructed objects', async () => {
       const src = dedent`// @flow
       const a = new Array<{|
         foo: 'bar'
@@ -167,8 +159,8 @@ describe("transform expressions", () => {
     });
   });
 
-  describe("untyped reduce MemberExpression", () => {
-    it("should do nothing if there is a simple primitive value", async () => {
+  describe('untyped reduce MemberExpression', () => {
+    it('should do nothing if there is a simple primitive value', async () => {
       const rootSrc = dedent`const a = [1, 2, 3].reduce((acc, val) => acc + val, 0);`;
       const src = dedent`
       // @flow
@@ -176,7 +168,7 @@ describe("transform expressions", () => {
       expect(await transform(src)).toBe(rootSrc);
     });
 
-    it("should do nothing if there is a type annotation on reduce", async () => {
+    it('should do nothing if there is a type annotation on reduce', async () => {
       const rootSrc = `const a = [1, 2, 3].reduce<number[]>((acc, val) => [...acc, val], []);`;
       const src = dedent`
       // @flow
@@ -184,7 +176,7 @@ describe("transform expressions", () => {
       expect(await transform(src)).toBe(rootSrc);
     });
 
-    it("should do nothing it there is a type annotation on the accumulator", async () => {
+    it('should do nothing it there is a type annotation on the accumulator', async () => {
       const src = dedent`
       // @flow
       const a = [1, 2, 3].reduce((acc: number[], val) => [...acc, val], ([]: number[]));`;
@@ -194,7 +186,7 @@ describe("transform expressions", () => {
       expect(await transform(src)).toBe(expected);
     });
 
-    it("should add an Array<any> type if accumulator is an array", async () => {
+    it('should add an Array<any> type if accumulator is an array', async () => {
       const src = dedent`
       // @flow
       const a = [1, 2, 3].reduce((acc: number[], val) => [...acc, val], []);`;
@@ -204,7 +196,7 @@ describe("transform expressions", () => {
       expect(await transform(src)).toBe(expected);
     });
 
-    it("should add a Record<string, any> type if accumulator is an object", async () => {
+    it('should add a Record<string, any> type if accumulator is an object', async () => {
       const src = dedent`
       // @flow
       const a = [1, 2, 3].reduce((acc: any, val) => ({...acc, [val]: val}), {});`;
@@ -215,13 +207,13 @@ describe("transform expressions", () => {
     });
   });
 
-  describe.each(JEST_MOCK_METHODS)("jest.%s paths", (mockMethod) => {
-    it("should do nothing if there is no extension already", async () => {
+  describe.each(JEST_MOCK_METHODS)('jest.%s paths', (mockMethod) => {
+    it('should do nothing if there is no extension already', async () => {
       const src = dedent`jest.${mockMethod}('foo');`;
       expect(await transform(src)).toBe(src);
     });
 
-    it("should remove the extension if a js or jsx one is provided", async () => {
+    it('should remove the extension if a js or jsx one is provided', async () => {
       const src = dedent`
       jest.${mockMethod}('foo.js');
       jest.${mockMethod}('foo2.jsx');`;
@@ -232,7 +224,7 @@ describe("transform expressions", () => {
       expect(await transform(src)).toBe(expected);
     });
 
-    it("should keep the extension if a non-js extension is provided", async () => {
+    it('should keep the extension if a non-js extension is provided', async () => {
       const src = dedent`
       jest.${mockMethod}('foo.ts');
       jest.${mockMethod}('foo2.tsx');`;

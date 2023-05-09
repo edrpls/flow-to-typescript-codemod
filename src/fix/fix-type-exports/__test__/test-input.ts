@@ -1,8 +1,8 @@
-import React, { Component, ElementType, RefObject } from "react";
+import React, { Component, ElementType, RefObject } from 'react';
 
 // Comment #1
 
-export { Key, ReactNode as Node } from "react";
+export { Key, ReactNode as Node } from 'react';
 
 // Comment #2
 

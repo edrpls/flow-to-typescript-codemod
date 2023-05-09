@@ -1,4 +1,4 @@
-import * as t from "@babel/types";
+import * as t from '@babel/types';
 
 export class ConfigurableTypeProvider {
   private readonly useStrictAnyFunctionType: boolean = false;
@@ -20,7 +20,7 @@ export class ConfigurableTypeProvider {
     if (this.useStrictAnyObjectType) {
       // Record<any, any>
       return t.tsTypeReference(
-        t.identifier("Record"),
+        t.identifier('Record'),
         t.tsTypeParameterInstantiation([t.tsAnyKeyword(), t.tsAnyKeyword()])
       );
     } else {
@@ -30,7 +30,7 @@ export class ConfigurableTypeProvider {
 
   public get flowAnyFunctionType(): t.TSType {
     if (this.useStrictAnyFunctionType) {
-      return t.tsTypeReference(t.identifier("Function"));
+      return t.tsTypeReference(t.identifier('Function'));
     } else {
       return t.tsAnyKeyword();
     }

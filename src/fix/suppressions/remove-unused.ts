@@ -1,7 +1,7 @@
-import { SourceFile, ts } from "ts-morph";
-import { FixCommandState, getDiagnostics } from "../state";
-import { logger } from "../../runner/logger";
-import { CommentToMake, CommentType } from "./shared";
+import { SourceFile, ts } from 'ts-morph';
+import { FixCommandState, getDiagnostics } from '../state';
+import { logger } from '../../runner/logger';
+import { CommentToMake, CommentType } from './shared';
 
 interface Metrics {
   removed: number;
@@ -31,10 +31,10 @@ function removeUnusedInFile(
         try {
           if (commentType === CommentType.Jsx) {
             // JSX comments have curly braces on either side that we want to delete
-            sourceFile.replaceText([insertPos - 2, insertPos + length + 2], "");
+            sourceFile.replaceText([insertPos - 2, insertPos + length + 2], '');
             addedLength -= length + 4;
           } else {
-            sourceFile.replaceText([insertPos, insertPos + length], "");
+            sourceFile.replaceText([insertPos, insertPos + length], '');
             addedLength -= length;
           }
           metrics.removed += 1;
@@ -59,11 +59,8 @@ export async function removeUnusedErrors(
   { project }: FixCommandState,
   writeFile: FileWriter = defaultWriter
 ) {
-  const diagnosticsByFile: Map<
-    SourceFile,
-    Record<number, CommentToMake>
-  > = new Map();
-  logger.info("Removing unused suppressions..");
+  const diagnosticsByFile: Map<SourceFile, Record<number, CommentToMake>> = new Map();
+  logger.info('Removing unused suppressions..');
 
   const diagnostics = getDiagnostics(project);
   diagnostics.forEach((error) => {
@@ -121,7 +118,5 @@ export async function removeUnusedErrors(
     }
   }
 
-  logger.complete(
-    `Removed ${metrics.removed} errors across ${diagnosticsByFile.size} files.`
-  );
+  logger.complete(`Removed ${metrics.removed} errors across ${diagnosticsByFile.size} files.`);
 }

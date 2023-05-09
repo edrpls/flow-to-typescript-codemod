@@ -1,9 +1,9 @@
 // Copy a sample default TsConfig to the current directory
 
-import { existsSync, lstatSync, writeFileSync } from "fs";
-import { join, relative, resolve } from "path";
+import { existsSync, lstatSync, writeFileSync } from 'fs';
+import { join, relative, resolve } from 'path';
 
-const ROOT_TSCONFIG_NAME = "tsconfig.json";
+const ROOT_TSCONFIG_NAME = 'tsconfig.json';
 
 /**
  * Starting in this directory, look up the directory tree until you find a tsconfig.json (unless you reach the top level directory).
@@ -13,11 +13,11 @@ function findRootTSConfig(directory = process.cwd()): string {
     return join(directory, ROOT_TSCONFIG_NAME);
   }
 
-  if (resolve(directory) === "/") {
-    throw new Error("No root Typescript configuration found.");
+  if (resolve(directory) === '/') {
+    throw new Error('No root Typescript configuration found.');
   }
 
-  return findRootTSConfig(join(directory, ".."));
+  return findRootTSConfig(join(directory, '..'));
 }
 
 export function defaultTsConfig(conversionPath: string) {
@@ -33,8 +33,5 @@ export function defaultTsConfig(conversionPath: string) {
     };
   }
 
-  writeFileSync(
-    join(process.cwd(), "tsconfig.json"),
-    JSON.stringify(rootConfig, null, 2)
-  );
+  writeFileSync(join(process.cwd(), 'tsconfig.json'), JSON.stringify(rootConfig, null, 2));
 }

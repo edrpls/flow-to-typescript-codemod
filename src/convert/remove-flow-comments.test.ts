@@ -1,11 +1,11 @@
-import dedent from "dedent";
-import { transform } from "./utils/testing";
+import dedent from 'dedent';
+import { transform } from './utils/testing';
 
 const standardProgram = `const myFunction = (i: number) => i + i;`;
 
-describe("remove-flow-pragmas", () => {
+describe('remove-flow-pragmas', () => {
   const expected = dedent`${standardProgram}`;
-  it("should remove standard inline flow pragmas", async () => {
+  it('should remove standard inline flow pragmas', async () => {
     const src = dedent`
     // @flow
     
@@ -15,7 +15,7 @@ describe("remove-flow-pragmas", () => {
     expect(await transform(src)).toEqual(expected);
   });
 
-  it("should remove standard block flow pragmas", async () => {
+  it('should remove standard block flow pragmas', async () => {
     const src = dedent`
     /* @flow */
 
@@ -25,7 +25,7 @@ describe("remove-flow-pragmas", () => {
     expect(await transform(src)).toEqual(expected);
   });
 
-  it("should remove the comment even if it has extra comment marks", async () => {
+  it('should remove the comment even if it has extra comment marks', async () => {
     const src = dedent`
       // ///// / / / / / /// // // /// ////////// /// // /////// @flow
       
@@ -35,7 +35,7 @@ describe("remove-flow-pragmas", () => {
     expect(await transform(src)).toEqual(expected);
   });
 
-  it("should replace noflow with the ts-nocheck", async () => {
+  it('should replace noflow with the ts-nocheck', async () => {
     const src = dedent`
     // @noflow
     
@@ -51,7 +51,7 @@ describe("remove-flow-pragmas", () => {
     expect(await transform(src)).toEqual(expected);
   });
 
-  it("should replace noflow with ts-nocheck in a block comment", async () => {
+  it('should replace noflow with ts-nocheck in a block comment', async () => {
     const src = dedent`
       /* @noflow */
       
@@ -67,7 +67,7 @@ describe("remove-flow-pragmas", () => {
     expect(await transform(src)).toEqual(expected);
   });
 
-  it("should replace noflow with ts-nocheck event if it has extra comment marks", async () => {
+  it('should replace noflow with ts-nocheck event if it has extra comment marks', async () => {
     const src = dedent`
         // ///// / / / / / /// // // /// ////////// /// // /////// @noflow
         
@@ -83,7 +83,7 @@ describe("remove-flow-pragmas", () => {
     expect(await transform(src)).toEqual(expected);
   });
 
-  it("should remove suppressions", async () => {
+  it('should remove suppressions', async () => {
     const src = dedent`
         // $FlowFixMe
         // $FlowIssue
@@ -101,7 +101,7 @@ describe("remove-flow-pragmas", () => {
     expect(await transform(src)).toEqual(expected);
   });
 
-  it("should leave non suppressions", async () => {
+  it('should leave non suppressions', async () => {
     const src = dedent`
         // $FlowNotSuppression
         // normal comment
@@ -119,7 +119,7 @@ describe("remove-flow-pragmas", () => {
     expect(await transform(src)).toEqual(expected);
   });
 
-  it("should remove suppressions inside code blocks", async () => {
+  it('should remove suppressions inside code blocks', async () => {
     const src = dedent`
     // $FlowIgnore
     const myFunction = (i: number) => {
@@ -144,7 +144,7 @@ describe("remove-flow-pragmas", () => {
     expect(await transform(src)).toEqual(expected);
   });
 
-  it("should remove multiple suppressions", async () => {
+  it('should remove multiple suppressions', async () => {
     const src = dedent`
     const handler = () => {
       // $FlowIgnore - test
