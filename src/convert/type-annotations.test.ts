@@ -544,6 +544,14 @@ describe('transform type annotations', () => {
     expect(await transform(src)).toBe(expected);
   });
 
+  it('Converts IndexedAccessType', async () => {
+    const src = dedent`type Foo = {
+      bar: string
+    };
+    type Test = Foo['bar'];`;
+    expect(await transform(src)).toBe(src);
+  });
+
   it('Converts React.ChildrenArray to an array', async () => {
     const src = dedent`
     type Props = {

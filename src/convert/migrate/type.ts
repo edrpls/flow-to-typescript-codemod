@@ -639,7 +639,6 @@ function actuallyMigrateType(
       return t.tsTypeReference(id, params);
     }
 
-    // case 'OptionalIndexedAccessType':
     case 'IndexedAccessType': {
       const objectType = migrateType(reporter, state, flowType.objectType);
       const indexType = migrateType(reporter, state, flowType.indexType);

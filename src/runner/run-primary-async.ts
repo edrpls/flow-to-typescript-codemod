@@ -240,8 +240,8 @@ async function _maybeMoveWithGit(from: string, to: string) {
     const relativeTo = to.slice(prefix.length);
     await git.mv(relativeFrom, relativeTo);
   } catch (error) {
-    logger.warn(`Failed to move from ${from} to ${to}, will fall back to simple rename`);
-    // TODO: Uncomment this when ready to run from target project
+    // TODO: Uncomment logs when ready to run from target project
+    // logger.warn(`Failed to move from ${from} to ${to}, will fall back to simple rename`);
     // logger.warn(error);
     fs.renameSync(from, to);
   }
