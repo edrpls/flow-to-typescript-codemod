@@ -59,9 +59,6 @@ export function hasDeclaration(file: t.File): boolean {
     DeclareModule() {
       found = true;
     },
-    DeclareExportDeclaration() {
-      found = true;
-    },
     DeclareClass() {
       found = true;
     },

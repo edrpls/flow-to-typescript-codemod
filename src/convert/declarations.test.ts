@@ -684,6 +684,48 @@ describe('transform declarations', () => {
     });
   });
 
+  describe.only('function overloads', () => {
+    it('transforms exported function overloads', async () => {
+      const src = dedent`
+        declare export function viewportContextSyncEffect({
+          viewportId: string,
+          type: 'study',
+        }): string;
+      `;
+
+      const expected = dedent`
+        export function viewportContextSyncEffect(
+          arg1: {
+            viewportId: string,
+            type: 'study'
+          },
+        ): string;
+      `;
+
+      expect(await transform(src)).toBe(expected);
+    });
+
+    it('transforms function overloads', async () => {
+      const src = dedent`
+        declare function viewportContextSyncEffect({
+          viewportId: string,
+          type: 'study',
+        }): string;
+      `;
+
+      const expected = dedent`
+        function viewportContextSyncEffect(
+          arg1: {
+            viewportId: string,
+            type: 'study'
+          },
+        ): string;
+      `;
+
+      expect(await transform(src)).toBe(expected);
+    });
+  });
+
   describe('variable declaration', () => {
     it('should add a Record type annotation to objects declared as empty', async () => {
       const src = dedent`

@@ -135,6 +135,36 @@ export function transformDeclarations({
   const awaitPromises: Array<Promise<unknown>> = [];
 
   traverse(file, {
+    DeclareFunction(path) {
+      console.log({ n: path.node });
+
+      // const declaration = path.get('declaration');
+      // console.log({ declaration })
+
+      // const functionDeclaration = t.functionDeclaration(
+      //   declaration.node.id,
+      //   declaration.node.params,
+      //   declaration.node.returnType,
+      //   declaration.node.body
+      // );
+      // path.replaceWith(functionDeclaration);
+    },
+    DeclareExportDeclaration(path) {
+      const { declaration, leadingComments, trailingComments, loc } = path.node;
+
+      const replacementNode = {
+        type: 'ExportNamedDeclaration',
+        declaration,
+        leadingComments,
+        trailingComments,
+        loc,
+      } as t.ExportNamedDeclaration;
+
+      if (replacementNode) {
+        //   if (declaration && declaration.type === 'DeclareFunction') {
+        path.replaceWith(replacementNode);
+      }
+    },
     ImportDeclaration(path) {
       // `import typeof X from` => `import {...} from`
       if (path.node.importKind === 'typeof') {
