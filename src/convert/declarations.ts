@@ -19,6 +19,7 @@ import { functionVisitor } from './function-visitor';
 import { TransformerInput } from './transformer';
 import { GqlTypes, ReactTypes, VtkTypes } from './utils/type-mappings';
 import { flowTypeAtPos } from './flow/type-at-pos';
+import { migrateFunctionParameters } from './migrate/function-parameter';
 
 /**
  * Rename React imports for TypeScript
@@ -135,34 +136,44 @@ export function transformDeclarations({
   const awaitPromises: Array<Promise<unknown>> = [];
 
   traverse(file, {
-    DeclareFunction(path) {
-      console.log({ n: path.node });
+    DeclareFunction: {
+      exit(path) {
+        if (path.parentPath.isExportDeclaration()) {
+          return;
+        }
 
-      // const declaration = path.get('declaration');
-      // console.log({ declaration })
+        const { id } = path.node;
+        const { typeAnnotation } = id;
+        if (typeAnnotation?.type !== 'TypeAnnotation') return;
+        if (typeAnnotation?.typeAnnotation?.type !== 'FunctionTypeAnnotation') return;
 
-      // const functionDeclaration = t.functionDeclaration(
-      //   declaration.node.id,
-      //   declaration.node.params,
-      //   declaration.node.returnType,
-      //   declaration.node.body
-      // );
-      // path.replaceWith(functionDeclaration);
+        const functionType = typeAnnotation?.typeAnnotation;
+
+        const typeParameters = functionType.typeParameters
+          ? migrateTypeParameterDeclaration(reporter, state, functionType.typeParameters)
+          : null;
+
+        const params = migrateFunctionParameters(reporter, state, functionType);
+
+        const omgplswork = t.tsDeclareFunction(id, typeParameters, params);
+
+        replaceWith(path, omgplswork, state.config.filePath, reporter);
+      },
     },
     DeclareExportDeclaration(path) {
-      const { declaration, leadingComments, trailingComments, loc } = path.node;
+      const { declaration } = path.node;
 
-      const replacementNode = {
-        type: 'ExportNamedDeclaration',
-        declaration,
-        leadingComments,
-        trailingComments,
-        loc,
-      } as t.ExportNamedDeclaration;
+      if (declaration?.type === 'DeclareFunction') {
+        const { id } = declaration;
+        const { typeAnnotation } = id;
+        if (typeAnnotation?.type !== 'TypeAnnotation') return;
+        if (typeAnnotation?.typeAnnotation?.type !== 'FunctionTypeAnnotation') return;
 
-      if (replacementNode) {
-        //   if (declaration && declaration.type === 'DeclareFunction') {
-        path.replaceWith(replacementNode);
+        //TODO: need to replace with an exported function declaration
+
+        const tsExport = t.exportNamedDeclaration(declaration);
+
+        replaceWith(path, tsExport, state.config.filePath, reporter);
       }
     },
     ImportDeclaration(path) {

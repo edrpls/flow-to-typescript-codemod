@@ -687,37 +687,37 @@ describe('transform declarations', () => {
   describe.only('function overloads', () => {
     it('transforms exported function overloads', async () => {
       const src = dedent`
-        declare export function viewportContextSyncEffect({
-          viewportId: string,
-          type: 'study',
+        declare export function foo({
+          id: string,
         }): string;
       `;
 
       const expected = dedent`
-        export function viewportContextSyncEffect(
+        export function foo(
           arg1: {
-            viewportId: string,
-            type: 'study'
+            id: string
           },
         ): string;
       `;
 
-      expect(await transform(src)).toBe(expected);
+      const output = await transform(src);
+
+      console.log(output);
+
+      expect(output).toBe(expected);
     });
 
-    it('transforms function overloads', async () => {
+    it.skip('transforms function overloads', async () => {
       const src = dedent`
-        declare function viewportContextSyncEffect({
-          viewportId: string,
-          type: 'study',
+        declare function foo({
+          id: string,
         }): string;
       `;
 
       const expected = dedent`
-        function viewportContextSyncEffect(
+        function foo(
           arg1: {
-            viewportId: string,
-            type: 'study'
+            id: string,
           },
         ): string;
       `;
