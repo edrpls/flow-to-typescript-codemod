@@ -77,8 +77,6 @@ export const functionVisitor = <
     // can infer accurate arguments that will cause fewer issues than types inferred by Flow,
     // as well as maintain the original intention of the author
     if (path.parentPath.node.type !== 'CallExpression') {
-      console.log('CallExporessioh');
-
       awaitPromises.push(annotateParamsWithFlowTypeAtPos(reporter, state, path.node.params, path));
     }
 

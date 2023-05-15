@@ -59,6 +59,11 @@ export function hasDeclaration(file: t.File): boolean {
     DeclareModule() {
       found = true;
     },
+    DeclareExportDeclaration(path) {
+      if (path.node.declaration?.type !== 'DeclareFunction') {
+        found = true;
+      }
+    },
     DeclareClass() {
       found = true;
     },

@@ -684,12 +684,12 @@ describe('transform declarations', () => {
     });
   });
 
-  describe.only('function overloads', () => {
+  describe('function overloads', () => {
     it('transforms exported function overloads', async () => {
       const src = dedent`
         declare export function foo({
           id: string,
-        }): string;
+        }): string
       `;
 
       const expected = dedent`
@@ -702,12 +702,10 @@ describe('transform declarations', () => {
 
       const output = await transform(src);
 
-      console.log(output);
-
       expect(output).toBe(expected);
     });
 
-    it.skip('transforms function overloads', async () => {
+    it('transforms function overloads', async () => {
       const src = dedent`
         declare function foo({
           id: string,
@@ -717,12 +715,13 @@ describe('transform declarations', () => {
       const expected = dedent`
         function foo(
           arg1: {
-            id: string,
+            id: string
           },
-        ): string;
+        ): string
       `;
 
-      expect(await transform(src)).toBe(expected);
+      const output = await transform(src);
+      expect(output).toBe(expected);
     });
   });
 

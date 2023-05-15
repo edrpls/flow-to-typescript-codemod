@@ -135,46 +135,47 @@ export function transformDeclarations({
 }: TransformerInput): Promise<unknown> {
   const awaitPromises: Array<Promise<unknown>> = [];
 
+  const migrateDeclareFunction = (declaration: t.Flow | null | undefined) => {
+    if (declaration?.type === 'DeclareFunction') {
+      const { id } = declaration;
+      const { typeAnnotation } = id;
+      if (typeAnnotation?.type !== 'TypeAnnotation') return;
+      if (typeAnnotation?.typeAnnotation?.type !== 'FunctionTypeAnnotation') return;
+
+      const returnType = migrateType(reporter, state, typeAnnotation.typeAnnotation.returnType, {
+        returnType: true,
+      });
+
+      const typeParameters = typeAnnotation.typeAnnotation.typeParameters
+        ? migrateTypeParameterDeclaration(
+            reporter,
+            state,
+            typeAnnotation.typeAnnotation.typeParameters
+          )
+        : null;
+
+      return t.tsDeclareFunction(
+        t.identifier(id.name),
+        typeParameters,
+        migrateFunctionParameters(reporter, state, typeAnnotation.typeAnnotation),
+        t.tsTypeAnnotation(returnType)
+      );
+    }
+  };
+
   traverse(file, {
-    DeclareFunction: {
-      exit(path) {
-        if (path.parentPath.isExportDeclaration()) {
-          return;
-        }
-
-        const { id } = path.node;
-        const { typeAnnotation } = id;
-        if (typeAnnotation?.type !== 'TypeAnnotation') return;
-        if (typeAnnotation?.typeAnnotation?.type !== 'FunctionTypeAnnotation') return;
-
-        const functionType = typeAnnotation?.typeAnnotation;
-
-        const typeParameters = functionType.typeParameters
-          ? migrateTypeParameterDeclaration(reporter, state, functionType.typeParameters)
-          : null;
-
-        const params = migrateFunctionParameters(reporter, state, functionType);
-
-        const omgplswork = t.tsDeclareFunction(id, typeParameters, params);
-
-        replaceWith(path, omgplswork, state.config.filePath, reporter);
-      },
+    DeclareFunction(path) {
+      const tsDeclaration = migrateDeclareFunction(path.node);
+      if (!tsDeclaration) return;
+      replaceWith(path, tsDeclaration, state.config.filePath, reporter);
     },
     DeclareExportDeclaration(path) {
-      const { declaration } = path.node;
-
-      if (declaration?.type === 'DeclareFunction') {
-        const { id } = declaration;
-        const { typeAnnotation } = id;
-        if (typeAnnotation?.type !== 'TypeAnnotation') return;
-        if (typeAnnotation?.typeAnnotation?.type !== 'FunctionTypeAnnotation') return;
-
-        //TODO: need to replace with an exported function declaration
-
-        const tsExport = t.exportNamedDeclaration(declaration);
-
-        replaceWith(path, tsExport, state.config.filePath, reporter);
+      if (path.node.declaration?.type !== 'DeclareFunction') {
+        return;
       }
+      const tsDeclaration = migrateDeclareFunction(path.node.declaration);
+      const tsExport = t.exportNamedDeclaration(tsDeclaration);
+      replaceWith(path, tsExport, state.config.filePath, reporter);
     },
     ImportDeclaration(path) {
       // `import typeof X from` => `import {...} from`
